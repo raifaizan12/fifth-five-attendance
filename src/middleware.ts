@@ -6,32 +6,36 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    const isAdminArea = path.startsWith("/dashboard") ||
+    // Pages/APIs only the CR/Admin may use
+    const isAdminOnly =
+      path.startsWith("/dashboard") ||
       path.startsWith("/students") ||
       path.startsWith("/subjects") ||
       path.startsWith("/teachers") ||
       path.startsWith("/attendance") ||
       path.startsWith("/reports") ||
       path.startsWith("/backup") ||
-      path.startsWith("/settings") ||
       path.startsWith("/audit") ||
       path.startsWith("/api/students") ||
-      path.startsWith("/api/subjects") ||
-      path.startsWith("/api/teachers") ||
-      path.startsWith("/api/attendance") ||
+      path.startsWith("/api/attendance/mark") ||
+      path.startsWith("/api/attendance/roster") ||
+      path.startsWith("/api/attendance/sessions") ||
       path.startsWith("/api/reports") ||
       path.startsWith("/api/backup") ||
-      path.startsWith("/api/settings") ||
       path.startsWith("/api/audit");
 
-    const isStudentArea = path.startsWith("/portal");
+    // Pages only Students may use
+    const isStudentOnly = path.startsWith("/portal");
 
-    if (isAdminArea && token?.role !== "ADMIN") {
+    if (isAdminOnly && token?.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    if (isStudentArea && token?.role !== "STUDENT") {
+    if (isStudentOnly && token?.role !== "STUDENT") {
       return NextResponse.redirect(new URL("/login", req.url));
     }
+    // Everything else covered by the matcher below (settings, subjects/teachers GET,
+    // attendance/history) is shared: any logged-in user may reach it, and the
+    // individual API route itself enforces the correct per-role data scoping.
     return NextResponse.next();
   },
   {
