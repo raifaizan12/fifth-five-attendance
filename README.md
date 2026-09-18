@@ -1,4 +1,4 @@
-# Fifth Five Attendance Portal
+# 5TH-5M ATTENDANCE PORTAL
 BS Information Technology · The Islamia University of Bahawalpur (IUB)
 
 A complete, working attendance management system: CR/Admin dashboard, mobile-friendly
