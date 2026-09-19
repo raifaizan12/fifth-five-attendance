@@ -263,6 +263,40 @@ tbody tr:hover { background: rgba(126, 171, 204, 0.05); }
 
 .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* ---------------- Leaderboard ---------------- */
+.leaderboard-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 4px;
+  border-bottom: 1px solid rgba(126, 171, 204, 0.1);
+}
+.leaderboard-row.me { background: var(--cyan-dim); border-radius: 10px; padding-left: 10px; padding-right: 10px; }
+.lb-rank {
+  width: 30px; text-align: center; font-family: "JetBrains Mono", monospace; font-weight: 700;
+  color: var(--ink-faint); flex: none;
+}
+.lb-rank.top1 { font-size: 20px; }
+.lb-rank.top2 { font-size: 18px; }
+.lb-rank.top3 { font-size: 17px; }
+.lb-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-meta { font-size: 11px; color: var(--ink-faint); font-family: "JetBrains Mono", monospace; }
+.lb-pct { font-family: "Sora", sans-serif; font-weight: 800; font-size: 15px; color: var(--cyan-soft); flex: none; }
+
+.rank-hero {
+  display: flex; align-items: center; gap: 18px; padding: 6px 2px;
+}
+.rank-hero .big { font-family: "Sora", sans-serif; font-weight: 800; font-size: 40px; color: var(--amber-soft); line-height: 1; }
+.rank-hero .sub { color: var(--ink-dim); font-size: 13px; margin-top: 4px; }
+
+/* ---------------- Heatmap calendar ---------------- */
+.heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+.heatmap-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; width: max-content; }
+.heatmap-cell { width: 13px; height: 13px; border-radius: 3px; background: rgba(126, 171, 204, 0.1); }
+.heatmap-cell[data-level="present"] { background: var(--green); }
+.heatmap-cell[data-level="late"] { background: var(--amber); }
+.heatmap-cell[data-level="absent"] { background: var(--red); opacity: 0.55; }
+.heatmap-cell[data-level="leave"] { background: #7c8aff; opacity: 0.7; }
+.heatmap-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint); margin-top: 10px; }
+.heatmap-legend .heatmap-cell { width: 11px; height: 11px; }
+
 /* ---------------- Print (Reports page) ---------------- */
 @media print {
   body { background: #fff !important; color: #111 !important; }
