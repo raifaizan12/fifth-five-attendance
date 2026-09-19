@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import BrandMark from "@/components/BrandMark";
+import CountUp from "@/components/CountUp";
+import Confetti from "@/components/Confetti";
 
 type HistoryData = {
   records: { id: string; date: string; topic?: string | null; subject: string; teacher?: string | null; status: string }[];
@@ -11,9 +13,45 @@ type HistoryData = {
   bySubject: { subjectId: string; subjectName: string; total: number; present: number; absent: number; late: number; leave: number; percentage: number }[];
 };
 
+type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number };
+type LeaderboardData = { podium: LeaderboardRow[]; totalStudents: number; me: LeaderboardRow | null };
+
 function StatusBadge({ status }: { status: string }) {
   const cls = { PRESENT: "badge-present", ABSENT: "badge-absent", LATE: "badge-late", LEAVE: "badge-leave" }[status] || "";
   return <span className={`badge ${cls}`}>{status.charAt(0) + status.slice(1).toLowerCase()}</span>;
+}
+
+// GitHub-style contribution grid: one cell per day, most recent 18 weeks,
+// colored by that day's attendance status (skips days with no class).
+function buildHeatmap(records: { date: string; status: string }[]) {
+  const byDay = new Map<string, string>();
+  for (const r of records) {
+    const key = new Date(r.date).toISOString().slice(0, 10);
+    // PRESENT beats LATE beats LEAVE beats ABSENT if more than one class that day
+    const rank: Record<string, number> = { PRESENT: 3, LATE: 2, LEAVE: 1, ABSENT: 0 };
+    const existing = byDay.get(key);
+    if (!existing || rank[r.status] > rank[existing]) byDay.set(key, r.status);
+  }
+
+  const weeks = 18;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(start.getDate() - (weeks * 7 - 1) - today.getDay());
+
+  const cols: { date: string; level: string | null }[][] = [];
+  const cursor = new Date(start);
+  for (let w = 0; w < weeks + 1; w++) {
+    const col: { date: string; level: string | null }[] = [];
+    for (let d = 0; d < 7; d++) {
+      const key = cursor.toISOString().slice(0, 10);
+      const status = byDay.get(key);
+      col.push({ date: key, level: status ? status.toLowerCase() : cursor > today ? "future" : null });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    cols.push(col);
+  }
+  return cols;
 }
 
 export default function PortalPage() {
@@ -21,6 +59,8 @@ export default function PortalPage() {
   const [threshold, setThreshold] = useState(75);
   const [loading, setLoading] = useState(true);
   const [subjectFilter, setSubjectFilter] = useState("");
+  const [board, setBoard] = useState<LeaderboardData | null>(null);
+  const [celebrate, setCelebrate] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -32,6 +72,17 @@ export default function PortalPage() {
       setLoading(false);
     });
   }, [subjectFilter]);
+
+  useEffect(() => {
+    fetch("/api/leaderboard").then((r) => r.json()).then((lb) => {
+      setBoard(lb);
+      if (lb?.me && (lb.me.rank <= 3 || lb.me.percentage >= 90)) {
+        setTimeout(() => setCelebrate(true), 400);
+      }
+    });
+  }, []);
+
+  const heatmap = useMemo(() => buildHeatmap(data?.records || []), [data]);
 
   return (
     <div>
@@ -48,17 +99,41 @@ export default function PortalPage() {
         </div>
       </div>
 
+      <Confetti fire={celebrate} />
+
       <div className="page">
         {loading || !data ? (
           <div className="card">Loading your attendance...</div>
         ) : (
           <>
+            {board?.me && (
+              <div className="card">
+                <div className="rank-hero">
+                  <div style={{ fontSize: 34 }}>
+                    {board.me.rank === 1 ? "🥇" : board.me.rank === 2 ? "🥈" : board.me.rank === 3 ? "🥉" : "🎯"}
+                  </div>
+                  <div>
+                    <div className="big">
+                      #<CountUp value={board.me.rank} /> <span style={{ fontSize: 16, color: "var(--ink-faint)" }}>of {board.totalStudents}</span>
+                    </div>
+                    <div className="sub">
+                      {board.me.rank <= 3
+                        ? "You're on the podium for the class!"
+                        : board.me.percentage >= 90
+                        ? "Top-tier attendance — keep it up."
+                        : `Top ${Math.max(1, Math.round((board.me.rank / board.totalStudents) * 100))}% of the class`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div className="hint">Overall Attendance</div>
                   <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "Sora, sans-serif", color: data.overallPercentage < threshold ? "var(--red)" : "var(--cyan-soft)" }}>
-                    {data.overallPercentage}%
+                    <CountUp value={data.overallPercentage} suffix="%" />
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -127,6 +202,48 @@ export default function PortalPage() {
             </div>
 
             <div className="card">
+              <h3 style={{ marginTop: 0 }}>Your Attendance Calendar</h3>
+              <p className="chart-sub" style={{ marginTop: -6 }}>Every class day, at a glance — like a contribution graph for showing up</p>
+              <div className="heatmap-scroll">
+                <div className="heatmap-grid">
+                  {heatmap.map((col, ci) => (
+                    <div key={ci} style={{ display: "grid", gridTemplateRows: "repeat(7, 13px)", gap: 3 }}>
+                      {col.map((day, di) => (
+                        <div
+                          key={di}
+                          className="heatmap-cell"
+                          data-level={day.level === "future" ? undefined : day.level || undefined}
+                          title={day.level && day.level !== "future" ? `${day.date}: ${day.level}` : day.date}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="heatmap-legend">
+                <span className="heatmap-cell" data-level="present" /> Present
+                <span className="heatmap-cell" data-level="late" style={{ marginLeft: 8 }} /> Late
+                <span className="heatmap-cell" data-level="leave" style={{ marginLeft: 8 }} /> Leave
+                <span className="heatmap-cell" data-level="absent" style={{ marginLeft: 8 }} /> Absent
+              </div>
+            </div>
+
+            {board && board.podium.length > 0 && (
+              <div className="card">
+                <h3 style={{ marginTop: 0 }}>🏆 Class Leaderboard</h3>
+                {board.podium.map((r) => (
+                  <div key={r.iubId} className={`leaderboard-row ${board.me?.iubId === r.iubId ? "me" : ""}`}>
+                    <span className={`lb-rank ${r.rank === 1 ? "top1" : r.rank === 2 ? "top2" : r.rank === 3 ? "top3" : ""}`}>
+                      {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
+                    </span>
+                    <span className="lb-name">{r.fullName}{board.me?.iubId === r.iubId ? " (you)" : ""}</span>
+                    <span className="lb-pct"><CountUp value={r.percentage} suffix="%" /></span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="card">
               <h3 style={{ marginTop: 0 }}>Attendance History</h3>
               <div className="field">
                 <label>Filter by subject</label>
@@ -157,4 +274,5 @@ export default function PortalPage() {
     </div>
   );
 }
+
 
