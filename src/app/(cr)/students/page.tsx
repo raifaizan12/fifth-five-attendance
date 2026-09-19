@@ -22,13 +22,10 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${cls}`}>{status.charAt(0) + status.slice(1).toLowerCase()}</span>;
 }
 
-// GitHub-style contribution grid: one cell per day, most recent 18 weeks,
-// colored by that day's attendance status (skips days with no class).
 function buildHeatmap(records: { date: string; status: string }[]) {
   const byDay = new Map<string, string>();
   for (const r of records) {
     const key = new Date(r.date).toISOString().slice(0, 10);
-    // PRESENT beats LATE beats LEAVE beats ABSENT if more than one class that day
     const rank: Record<string, number> = { PRESENT: 3, LATE: 2, LEAVE: 1, ABSENT: 0 };
     const existing = byDay.get(key);
     if (!existing || rank[r.status] > rank[existing]) byDay.set(key, r.status);
@@ -59,28 +56,49 @@ export default function PortalPage() {
   const [data, setData] = useState<HistoryData | null>(null);
   const [threshold, setThreshold] = useState(75);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [subjectFilter, setSubjectFilter] = useState("");
   const [board, setBoard] = useState<LeaderboardData | null>(null);
   const [celebrate, setCelebrate] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     Promise.all([
-      fetch(`/api/attendance/history${subjectFilter ? `?subjectId=${subjectFilter}` : ""}`).then((r) => r.json()),
-      fetch("/api/settings").then((r) => r.json()),
-    ]).then(([hist, settings]) => {
-      setData(hist);
-      setThreshold(settings.settings?.attendanceThreshold ?? 75);
-      setLoading(false);
-    });
+      fetch(`/api/attendance/history${subjectFilter ? `?subjectId=${subjectFilter}` : ""}`),
+      fetch("/api/settings"),
+    ])
+      .then(async ([histRes, settingsRes]) => {
+        if (!histRes.ok) {
+          const body = await histRes.json().catch(() => ({}));
+          throw new Error(body.error || `History request failed (${histRes.status})`);
+        }
+        if (!settingsRes.ok) {
+          const body = await settingsRes.json().catch(() => ({}));
+          throw new Error(body.error || `Settings request failed (${settingsRes.status})`);
+        }
+        const hist: HistoryData = await histRes.json();
+        const settings = await settingsRes.json();
+        setData(hist);
+        setThreshold(settings.settings?.attendanceThreshold ?? 75);
+      })
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : "Something went wrong loading attendance.");
+      })
+      .finally(() => setLoading(false));
   }, [subjectFilter]);
 
   useEffect(() => {
-    fetch("/api/leaderboard").then((r) => r.json()).then((lb) => {
-      setBoard(lb);
-      if (lb?.me && (lb.me.rank <= 3 || lb.me.percentage >= 90)) {
-        setTimeout(() => setCelebrate(true), 400);
-      }
-    });
+    fetch("/api/leaderboard")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((lb) => {
+        if (!lb) return;
+        setBoard(lb);
+        if (lb?.me && (lb.me.rank <= 3 || lb.me.percentage >= 90)) {
+          setTimeout(() => setCelebrate(true), 400);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const heatmap = useMemo(() => buildHeatmap(data?.records || []), [data]);
@@ -103,8 +121,17 @@ export default function PortalPage() {
       <Confetti fire={celebrate} />
 
       <div className="page">
-        {loading || !data ? (
+        {loading ? (
           <div className="card">Loading your attendance...</div>
+        ) : error ? (
+          <div className="card">
+            <div className="error-text">Couldn't load your attendance: {error}</div>
+            <button className="logout-btn" style={{ marginTop: 12 }} onClick={() => setSubjectFilter((f) => f)}>
+              Try again
+            </button>
+          </div>
+        ) : !data ? (
+          <div className="card">No attendance data available yet.</div>
         ) : (
           <>
             {board?.me && (
@@ -170,8 +197,6 @@ export default function PortalPage() {
                 Present: {data.overallCounts.present} · Absent: {data.overallCounts.absent} · Late: {data.overallCounts.late} · Leave: {data.overallCounts.leave}
               </div>
               {data.overallPercentage < threshold && data.overallCounts.total > 0 && (() => {
-                // How many more PRESENT classes in a row would it take to reach the threshold,
-                // assuming every future class is attended and the denominator grows by one each time.
                 const { present, late, absent } = data.overallCounts;
                 const attended = present + late;
                 const denom = attended + absent;
