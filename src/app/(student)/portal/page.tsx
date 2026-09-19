@@ -16,6 +16,7 @@ type HistoryData = {
 
 type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number; streak: number };
 type LeaderboardData = { podium: LeaderboardRow[]; totalStudents: number; longestStreak: number; me: LeaderboardRow | null };
+type Subject = { id: string; name: string; code?: string | null; semester?: string | null; teacher?: { fullName: string; email?: string | null } | null };
 
 function StatusBadge({ status }: { status: string }) {
   const cls = { PRESENT: "badge-present", ABSENT: "badge-absent", LATE: "badge-late", LEAVE: "badge-leave" }[status] || "";
@@ -62,6 +63,7 @@ export default function PortalPage() {
   const [subjectFilter, setSubjectFilter] = useState("");
   const [board, setBoard] = useState<LeaderboardData | null>(null);
   const [celebrate, setCelebrate] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -81,6 +83,10 @@ export default function PortalPage() {
         setTimeout(() => setCelebrate(true), 400);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/subjects").then((r) => r.json()).then((d) => setSubjects(d.subjects || []));
   }, []);
 
   const heatmap = useMemo(() => buildHeatmap(data?.records || []), [data]);
@@ -188,6 +194,26 @@ export default function PortalPage() {
                 );
               })()}
             </div>
+
+            {subjects.length > 0 && (
+              <div className="card">
+                <h3 style={{ marginTop: 0 }}>My Subjects &amp; Teachers</h3>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>Subject</th><th>Code</th><th>Teacher</th></tr></thead>
+                    <tbody>
+                      {subjects.map((s) => (
+                        <tr key={s.id}>
+                          <td>{s.name}</td>
+                          <td>{s.code || "—"}</td>
+                          <td>{s.teacher?.fullName || <span className="hint">Not assigned</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <div className="card">
               <h3 style={{ marginTop: 0 }}>Subject-wise Attendance</h3>
