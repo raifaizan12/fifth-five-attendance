@@ -16,6 +16,7 @@ export default withAuth(
       path.startsWith("/reports") ||
       path.startsWith("/backup") ||
       path.startsWith("/audit") ||
+      path.startsWith("/timetable") ||
       path.startsWith("/api/students") ||
       path.startsWith("/api/attendance/mark") ||
       path.startsWith("/api/attendance/roster") ||
@@ -34,8 +35,8 @@ export default withAuth(
       return NextResponse.redirect(new URL("/login", req.url));
     }
     // Everything else covered by the matcher below (settings, subjects/teachers GET,
-    // attendance/history) is shared: any logged-in user may reach it, and the
-    // individual API route itself enforces the correct per-role data scoping.
+    // attendance/history, api/timetable) is shared: any logged-in user may reach it,
+    // and the individual API route itself enforces the correct per-role data scoping.
     return NextResponse.next();
   },
   {
@@ -56,6 +57,7 @@ export const config = {
     "/backup/:path*",
     "/settings/:path*",
     "/audit/:path*",
+    "/timetable/:path*",
     "/portal/:path*",
     "/api/students/:path*",
     "/api/subjects/:path*",
@@ -65,5 +67,6 @@ export const config = {
     "/api/backup/:path*",
     "/api/settings/:path*",
     "/api/audit/:path*",
+    "/api/timetable/:path*",
   ],
 };
