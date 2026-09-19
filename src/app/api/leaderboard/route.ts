@@ -11,18 +11,31 @@ export async function GET() {
   if (error) return error;
 
   const records = await prisma.attendanceRecord.findMany({
-    include: { student: true },
+    include: { student: true, session: { select: { date: true } } },
+    orderBy: { session: { date: "desc" } },
   });
 
-  const grouped = new Map<string, { student: (typeof records)[number]["student"]; recs: { status: string }[] }>();
+  const grouped = new Map<
+    string,
+    { student: (typeof records)[number]["student"]; recs: { status: string; date: Date }[] }
+  >();
   for (const r of records) {
     if (!grouped.has(r.studentId)) grouped.set(r.studentId, { student: r.student, recs: [] });
-    grouped.get(r.studentId)!.recs.push({ status: r.status });
+    grouped.get(r.studentId)!.recs.push({ status: r.status, date: r.session.date });
   }
 
   const ranked = Array.from(grouped.values())
     .map(({ student, recs }) => {
       const counts = tallyRecords(recs);
+
+      // Current streak: consecutive most-recent classes marked PRESENT or LATE.
+      // Breaks on the first ABSENT or LEAVE going backward in time.
+      let streak = 0;
+      for (const r of recs) {
+        if (r.status === "PRESENT" || r.status === "LATE") streak++;
+        else break;
+      }
+
       return {
         studentId: student.id,
         fullName: student.fullName,
@@ -30,6 +43,7 @@ export async function GET() {
         total: counts.present + counts.absent + counts.late + counts.leave,
         present: counts.present,
         percentage: computePercentage(counts),
+        streak,
       };
     })
     // Ties broken by who has attended more classes outright — a student
@@ -38,6 +52,7 @@ export async function GET() {
     .map((row, i) => ({ ...row, rank: i + 1 }));
 
   const podium = ranked.slice(0, 10);
+  const longestStreak = ranked.reduce((max, r) => Math.max(max, r.streak), 0);
 
   let me: (typeof ranked)[number] | null = null;
   if (session!.user.role === "STUDENT" && session!.user.studentId) {
@@ -47,6 +62,8 @@ export async function GET() {
   return NextResponse.json({
     podium,
     totalStudents: ranked.length,
+    longestStreak,
     me,
   });
 }
+
