@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import CountUp from "@/components/CountUp";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -29,6 +30,8 @@ type DashboardData = {
   bucketCounts: { name: string; value: number; color: string }[];
 };
 
+type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number };
+
 const CHART_TOOLTIP_STYLE = {
   background: "rgba(10, 17, 32, 0.95)",
   border: "1px solid rgba(126, 171, 204, 0.28)",
@@ -39,16 +42,19 @@ const CHART_TOOLTIP_STYLE = {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [studentsRes, settingsRes, sessionsRes, reportsRes] = await Promise.all([
+      const [studentsRes, settingsRes, sessionsRes, reportsRes, leaderboardRes] = await Promise.all([
         fetch("/api/students").then((r) => r.json()),
         fetch("/api/settings").then((r) => r.json()),
         fetch("/api/attendance/sessions?limit=10").then((r) => r.json()),
         fetch("/api/reports").then((r) => r.json()),
+        fetch("/api/leaderboard").then((r) => r.json()),
       ]);
+      setLeaderboard(leaderboardRes.podium || []);
 
       const totalStudents = studentsRes.students?.length || 0;
       const threshold = settingsRes.settings?.attendanceThreshold ?? 75;
@@ -128,19 +134,19 @@ export default function DashboardPage() {
       <div className="stat-grid">
         <div className="stat-card">
           <div className="label">Total Students</div>
-          <div className="value">{data.totalStudents}</div>
+          <div className="value"><CountUp value={data.totalStudents} /></div>
         </div>
         <div className="stat-card">
           <div className="label">Today Present</div>
-          <div className="value">{data.todayPresent}</div>
+          <div className="value"><CountUp value={data.todayPresent} /></div>
         </div>
         <div className="stat-card">
           <div className="label">Today Absent</div>
-          <div className="value">{data.todayAbsent}</div>
+          <div className="value"><CountUp value={data.todayAbsent} /></div>
         </div>
         <div className="stat-card">
           <div className="label">Overall Attendance</div>
-          <div className="value">{data.overallPercentage}%</div>
+          <div className="value"><CountUp value={data.overallPercentage} suffix="%" /></div>
         </div>
       </div>
 
@@ -219,6 +225,23 @@ export default function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      )}
+
+      {leaderboard.length > 0 && (
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>🏆 Class Leaderboard</h3>
+          <p className="chart-sub" style={{ marginTop: -8, marginBottom: 8 }}>Top attendance, all subjects combined</p>
+          {leaderboard.map((r) => (
+            <div key={r.iubId} className="leaderboard-row">
+              <span className={`lb-rank ${r.rank === 1 ? "top1" : r.rank === 2 ? "top2" : r.rank === 3 ? "top3" : ""}`}>
+                {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
+              </span>
+              <span className="lb-name">{r.fullName}</span>
+              <span className="lb-meta">{r.iubId}</span>
+              <span className="lb-pct"><CountUp value={r.percentage} suffix="%" /></span>
+            </div>
+          ))}
         </div>
       )}
 
