@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import BrandMark from "@/components/BrandMark";
 import CountUp from "@/components/CountUp";
 import Confetti from "@/components/Confetti";
+import ShareCard from "@/components/ShareCard";
 
 type HistoryData = {
   records: { id: string; date: string; topic?: string | null; subject: string; teacher?: string | null; status: string }[];
@@ -13,8 +14,8 @@ type HistoryData = {
   bySubject: { subjectId: string; subjectName: string; total: number; present: number; absent: number; late: number; leave: number; percentage: number }[];
 };
 
-type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number };
-type LeaderboardData = { podium: LeaderboardRow[]; totalStudents: number; me: LeaderboardRow | null };
+type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number; streak: number };
+type LeaderboardData = { podium: LeaderboardRow[]; totalStudents: number; longestStreak: number; me: LeaderboardRow | null };
 
 function StatusBadge({ status }: { status: string }) {
   const cls = { PRESENT: "badge-present", ABSENT: "badge-absent", LATE: "badge-late", LEAVE: "badge-leave" }[status] || "";
@@ -124,6 +125,24 @@ export default function PortalPage() {
                         : `Top ${Math.max(1, Math.round((board.me.rank / board.totalStudents) * 100))}% of the class`}
                     </div>
                   </div>
+                </div>
+                {board.me.streak >= 2 && (
+                  <div className="chip chip-up" style={{ marginTop: 12 }}>
+                    🔥 {board.me.streak}-class streak
+                    {board.me.streak === board.longestStreak && board.longestStreak > 1 ? " — longest in class!" : ""}
+                  </div>
+                )}
+                <div style={{ marginTop: 16 }}>
+                  <ShareCard
+                    data={{
+                      fullName: board.me.fullName,
+                      iubId: board.me.iubId,
+                      percentage: board.me.percentage,
+                      rank: board.me.rank,
+                      totalStudents: board.totalStudents,
+                      streak: board.me.streak,
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -236,7 +255,7 @@ export default function PortalPage() {
                     <span className={`lb-rank ${r.rank === 1 ? "top1" : r.rank === 2 ? "top2" : r.rank === 3 ? "top3" : ""}`}>
                       {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
                     </span>
-                    <span className="lb-name">{r.fullName}{board.me?.iubId === r.iubId ? " (you)" : ""}</span>
+                    <span className="lb-name">{r.fullName}{board.me?.iubId === r.iubId ? " (you)" : ""}{r.streak >= 3 ? " 🔥" : ""}</span>
                     <span className="lb-pct"><CountUp value={r.percentage} suffix="%" /></span>
                   </div>
                 ))}
@@ -274,5 +293,4 @@ export default function PortalPage() {
     </div>
   );
 }
-
 
