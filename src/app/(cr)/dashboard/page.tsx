@@ -30,7 +30,7 @@ type DashboardData = {
   bucketCounts: { name: string; value: number; color: string }[];
 };
 
-type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number };
+type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number; streak: number };
 
 const CHART_TOOLTIP_STYLE = {
   background: "rgba(10, 17, 32, 0.95)",
@@ -237,7 +237,7 @@ export default function DashboardPage() {
               <span className={`lb-rank ${r.rank === 1 ? "top1" : r.rank === 2 ? "top2" : r.rank === 3 ? "top3" : ""}`}>
                 {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
               </span>
-              <span className="lb-name">{r.fullName}</span>
+              <span className="lb-name">{r.fullName}{r.streak >= 3 ? " 🔥" : ""}</span>
               <span className="lb-meta">{r.iubId}</span>
               <span className="lb-pct"><CountUp value={r.percentage} suffix="%" /></span>
             </div>
@@ -286,3 +286,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
