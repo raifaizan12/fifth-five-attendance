@@ -1,318 +1,146 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { signOut } from "next-auth/react";
-import BrandMark from "@/components/BrandMark";
-import CountUp from "@/components/CountUp";
-import Confetti from "@/components/Confetti";
-import ShareCard from "@/components/ShareCard";
+import { useEffect, useRef, useState } from "react";
 
-type HistoryData = {
-  records: { id: string; date: string; topic?: string | null; subject: string; teacher?: string | null; status: string }[];
-  overallCounts: { total: number; present: number; absent: number; late: number; leave: number };
-  overallPercentage: number;
-  bySubject: { subjectId: string; subjectName: string; total: number; present: number; absent: number; late: number; leave: number; percentage: number }[];
+type Student = {
+  id: string;
+  fullName: string;
+  iubId: string;
+  regNumber: string;
+  semester: string;
+  section: string;
+  email?: string | null;
+  phone?: string | null;
+  user?: { isActive: boolean } | null;
 };
 
-type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number; streak: number };
-type LeaderboardData = { podium: LeaderboardRow[]; totalStudents: number; longestStreak: number; me: LeaderboardRow | null };
+const emptyForm = { fullName: "", iubId: "", regNumber: "", semester: "", section: "Fifth Five", email: "", phone: "" };
 
-function StatusBadge({ status }: { status: string }) {
-  const cls = { PRESENT: "badge-present", ABSENT: "badge-absent", LATE: "badge-late", LEAVE: "badge-leave" }[status] || "";
-  return <span className={`badge ${cls}`}>{status.charAt(0) + status.slice(1).toLowerCase()}</span>;
-}
-
-function buildHeatmap(records: { date: string; status: string }[]) {
-  const byDay = new Map<string, string>();
-  for (const r of records) {
-    const key = new Date(r.date).toISOString().slice(0, 10);
-    const rank: Record<string, number> = { PRESENT: 3, LATE: 2, LEAVE: 1, ABSENT: 0 };
-    const existing = byDay.get(key);
-    if (!existing || rank[r.status] > rank[existing]) byDay.set(key, r.status);
-  }
-
-  const weeks = 18;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = new Date(today);
-  start.setDate(start.getDate() - (weeks * 7 - 1) - today.getDay());
-
-  const cols: { date: string; level: string | null }[][] = [];
-  const cursor = new Date(start);
-  for (let w = 0; w < weeks + 1; w++) {
-    const col: { date: string; level: string | null }[] = [];
-    for (let d = 0; d < 7; d++) {
-      const key = cursor.toISOString().slice(0, 10);
-      const status = byDay.get(key);
-      col.push({ date: key, level: status ? status.toLowerCase() : cursor > today ? "future" : null });
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    cols.push(col);
-  }
-  return cols;
-}
-
-export default function PortalPage() {
-  const [data, setData] = useState<HistoryData | null>(null);
-  const [threshold, setThreshold] = useState(75);
+export default function StudentsPage() {
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [subjectFilter, setSubjectFilter] = useState("");
-  const [board, setBoard] = useState<LeaderboardData | null>(null);
-  const [celebrate, setCelebrate] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [importResult, setImportResult] = useState<any>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  async function load(q = "") {
     setLoading(true);
-    setError(null);
-    Promise.all([
-      fetch(`/api/attendance/history${subjectFilter ? `?subjectId=${subjectFilter}` : ""}`),
-      fetch("/api/settings"),
-    ])
-      .then(async ([histRes, settingsRes]) => {
-        if (!histRes.ok) {
-          const body = await histRes.json().catch(() => ({}));
-          throw new Error(body.error || `History request failed (${histRes.status})`);
-        }
-        if (!settingsRes.ok) {
-          const body = await settingsRes.json().catch(() => ({}));
-          throw new Error(body.error || `Settings request failed (${settingsRes.status})`);
-        }
-        const hist: HistoryData = await histRes.json();
-        const settings = await settingsRes.json();
-        setData(hist);
-        setThreshold(settings.settings?.attendanceThreshold ?? 75);
-      })
-      .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : "Something went wrong loading attendance.");
-      })
-      .finally(() => setLoading(false));
-  }, [subjectFilter]);
+    const res = await fetch(`/api/students${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+    const data = await res.json();
+    setStudents(data.students || []);
+    setLoading(false);
+  }
 
-  useEffect(() => {
-    fetch("/api/leaderboard")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((lb) => {
-        if (!lb) return;
-        setBoard(lb);
-        if (lb?.me && (lb.me.rank <= 3 || lb.me.percentage >= 90)) {
-          setTimeout(() => setCelebrate(true), 400);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const heatmap = useMemo(() => buildHeatmap(data?.records || []), [data]);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(""); setMessage("");
+    const url = editingId ? `/api/students/${editingId}` : "/api/students";
+    const method = editingId ? "PUT" : "POST";
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error || "Something went wrong"); return; }
+    setMessage(editingId ? "Student updated." : `Student added. Initial password: ${data.initialPassword}`);
+    setForm(emptyForm);
+    setEditingId(null);
+    load(query);
+  }
+
+  function startEdit(s: Student) {
+    setEditingId(s.id);
+    setForm({ fullName: s.fullName, iubId: s.iubId, regNumber: s.regNumber, semester: s.semester, section: s.section, email: s.email || "", phone: s.phone || "" });
+    setMessage(""); setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Remove this student? This cannot be undone.")) return;
+    await fetch(`/api/students/${id}`, { method: "DELETE" });
+    load(query);
+  }
+
+  async function handleImport() {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return;
+    const csvText = await file.text();
+    const res = await fetch("/api/students/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csvText }) });
+    const data = await res.json();
+    setImportResult(data);
+    load(query);
+  }
 
   return (
     <div>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <div>
-            <BrandMark />
-            <div>
-              <h1>My Attendance</h1>
-              <div className="sub">BS IT · Fifth Five · IUB</div>
-            </div>
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>{editingId ? "Edit Student" : "Add Student"}</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="field"><label>Full Name</label><input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required /></div>
+          <div className="field"><label>IUB ID</label><input value={form.iubId} onChange={(e) => setForm({ ...form, iubId: e.target.value })} required disabled={!!editingId} /></div>
+          <div className="field"><label>Registration Number</label><input value={form.regNumber} onChange={(e) => setForm({ ...form, regNumber: e.target.value })} required disabled={!!editingId} /></div>
+          <div className="field"><label>Semester</label><input value={form.semester} onChange={(e) => setForm({ ...form, semester: e.target.value })} required /></div>
+          <div className="field"><label>Section</label><input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} /></div>
+          <div className="field"><label>Email (optional)</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+          <div className="field"><label>Contact Number (optional)</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          {error && <div className="error-text">{error}</div>}
+          {message && <div className="success-text">{message}</div>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="submit" className="btn btn-primary">{editingId ? "Save Changes" : "Add Student"}</button>
+            {editingId && <button type="button" className="btn btn-secondary" onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancel</button>}
           </div>
-          <button className="logout-btn" onClick={() => signOut({ callbackUrl: "/login" })}>Log out</button>
-        </div>
+        </form>
       </div>
 
-      <Confetti fire={celebrate} />
-
-      <div className="page">
-        {loading ? (
-          <div className="card">Loading your attendance...</div>
-        ) : error ? (
-          <div className="card">
-            <div className="error-text">Couldn't load your attendance: {error}</div>
-            <button className="logout-btn" style={{ marginTop: 12 }} onClick={() => setSubjectFilter((f) => f)}>
-              Try again
-            </button>
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Import Students via CSV</h3>
+        <div className="hint">Columns: Name, IUB ID, Registration Number, Semester, Section, Email, Phone</div>
+        <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+          <input type="file" accept=".csv" ref={fileRef} />
+          <button className="btn btn-secondary btn-sm" onClick={handleImport}>Import CSV</button>
+        </div>
+        {importResult && (
+          <div style={{ marginTop: 12, fontSize: 13 }}>
+            <div className="success-text">{importResult.successful.length} added successfully</div>
+            {importResult.duplicates.length > 0 && <div className="error-text">{importResult.duplicates.length} duplicates skipped: {importResult.duplicates.join(", ")}</div>}
+            {importResult.invalid.length > 0 && (
+              <div className="error-text">
+                {importResult.invalid.length} invalid rows:
+                <ul>{importResult.invalid.map((i: any, idx: number) => <li key={idx}>Row {i.row}: {i.reason}</li>)}</ul>
+              </div>
+            )}
           </div>
-        ) : !data ? (
-          <div className="card">No attendance data available yet.</div>
-        ) : (
-          <>
-            {board?.me && (
-              <div className="card">
-                <div className="rank-hero">
-                  <div style={{ fontSize: 34 }}>
-                    {board.me.rank === 1 ? "🥇" : board.me.rank === 2 ? "🥈" : board.me.rank === 3 ? "🥉" : "🎯"}
-                  </div>
-                  <div>
-                    <div className="big">
-                      #<CountUp value={board.me.rank} /> <span style={{ fontSize: 16, color: "var(--ink-faint)" }}>of {board.totalStudents}</span>
-                    </div>
-                    <div className="sub">
-                      {board.me.rank <= 3
-                        ? "You're on the podium for the class!"
-                        : board.me.percentage >= 90
-                        ? "Top-tier attendance — keep it up."
-                        : `Top ${Math.max(1, Math.round((board.me.rank / board.totalStudents) * 100))}% of the class`}
-                    </div>
-                  </div>
-                </div>
-                {board.me.streak >= 2 && (
-                  <div className="chip chip-up" style={{ marginTop: 12 }}>
-                    🔥 {board.me.streak}-class streak
-                    {board.me.streak === board.longestStreak && board.longestStreak > 1 ? " — longest in class!" : ""}
-                  </div>
-                )}
-                <div style={{ marginTop: 16 }}>
-                  <ShareCard
-                    data={{
-                      fullName: board.me.fullName,
-                      iubId: board.me.iubId,
-                      percentage: board.me.percentage,
-                      rank: board.me.rank,
-                      totalStudents: board.totalStudents,
-                      streak: board.me.streak,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+        )}
+      </div>
 
-            <div className="card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div className="hint">Overall Attendance</div>
-                  <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "Sora, sans-serif", color: data.overallPercentage < threshold ? "var(--red)" : "var(--cyan-soft)" }}>
-                    <CountUp value={data.overallPercentage} suffix="%" />
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div className="hint">Threshold: {threshold}%</div>
-                  {data.overallPercentage < threshold && <div className="error-text">Below required threshold</div>}
-                </div>
-              </div>
-              <div className="progress-bar-outer" style={{ marginTop: 10 }}>
-                <div
-                  className="progress-bar-inner"
-                  style={{ width: `${Math.min(data.overallPercentage, 100)}%`, background: data.overallPercentage < threshold ? "var(--red)" : "var(--green)" }}
-                />
-              </div>
-              <div className="hint" style={{ marginTop: 10 }}>
-                Present: {data.overallCounts.present} · Absent: {data.overallCounts.absent} · Late: {data.overallCounts.late} · Leave: {data.overallCounts.leave}
-              </div>
-              {data.overallPercentage < threshold && data.overallCounts.total > 0 && (() => {
-                const { present, late, absent } = data.overallCounts;
-                const attended = present + late;
-                const denom = attended + absent;
-                let needed = 0;
-                let a = attended, d = denom;
-                while (d === 0 || (a / d) * 100 < threshold) {
-                  a += 1; d += 1; needed += 1;
-                  if (needed > 500) break;
-                }
-                return (
-                  <div className="hint" style={{ marginTop: 8, color: "var(--amber-soft)" }}>
-                    Attending the next {needed} class{needed === 1 ? "" : "es"} in a row brings you back to {threshold}%.
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Subject-wise Attendance</h3>
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Subject</th><th>Present</th><th>Absent</th><th>Late</th><th>Leave</th><th>%</th></tr></thead>
-                  <tbody>
-                    {data.bySubject.map((s) => (
-                      <tr key={s.subjectId}>
-                        <td>{s.subjectName}</td>
-                        <td>{s.present}</td>
-                        <td>{s.absent}</td>
-                        <td>{s.late}</td>
-                        <td>{s.leave}</td>
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 110 }}>
-                            <span className={`badge ${s.percentage < threshold ? "badge-absent" : "badge-present"}`}>{s.percentage}%</span>
-                            <div className="progress-bar-outer" style={{ flex: 1, height: 5 }}>
-                              <div
-                                className="progress-bar-inner"
-                                style={{ width: `${Math.min(s.percentage, 100)}%`, background: s.percentage < threshold ? "var(--red)" : "var(--green)" }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Your Attendance Calendar</h3>
-              <p className="chart-sub" style={{ marginTop: -6 }}>Every class day, at a glance — like a contribution graph for showing up</p>
-              <div className="heatmap-scroll">
-                <div className="heatmap-grid">
-                  {heatmap.map((col, ci) => (
-                    <div key={ci} style={{ display: "grid", gridTemplateRows: "repeat(7, 13px)", gap: 3 }}>
-                      {col.map((day, di) => (
-                        <div
-                          key={di}
-                          className="heatmap-cell"
-                          data-level={day.level === "future" ? undefined : day.level || undefined}
-                          title={day.level && day.level !== "future" ? `${day.date}: ${day.level}` : day.date}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="heatmap-legend">
-                <span className="heatmap-cell" data-level="present" /> Present
-                <span className="heatmap-cell" data-level="late" style={{ marginLeft: 8 }} /> Late
-                <span className="heatmap-cell" data-level="leave" style={{ marginLeft: 8 }} /> Leave
-                <span className="heatmap-cell" data-level="absent" style={{ marginLeft: 8 }} /> Absent
-              </div>
-            </div>
-
-            {board && board.podium.length > 0 && (
-              <div className="card">
-                <h3 style={{ marginTop: 0 }}>🏆 Class Leaderboard</h3>
-                {board.podium.map((r) => (
-                  <div key={r.iubId} className={`leaderboard-row ${board.me?.iubId === r.iubId ? "me" : ""}`}>
-                    <span className={`lb-rank ${r.rank === 1 ? "top1" : r.rank === 2 ? "top2" : r.rank === 3 ? "top3" : ""}`}>
-                      {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
-                    </span>
-                    <span className="lb-name">{r.fullName}{board.me?.iubId === r.iubId ? " (you)" : ""}{r.streak >= 3 ? " 🔥" : ""}</span>
-                    <span className="lb-pct"><CountUp value={r.percentage} suffix="%" /></span>
-                  </div>
+      <div className="card">
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input placeholder="Search by name or ID..." value={query} onChange={(e) => { setQuery(e.target.value); load(e.target.value); }} />
+        </div>
+        {loading ? <div>Loading...</div> : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>IUB ID</th><th>Reg #</th><th>Semester</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {students.map((s) => (
+                  <tr key={s.id}>
+                    <td>{s.fullName}</td>
+                    <td>{s.iubId}</td>
+                    <td>{s.regNumber}</td>
+                    <td>{s.semester}</td>
+                    <td>{s.user?.isActive === false ? <span className="badge badge-absent">Inactive</span> : <span className="badge badge-present">Active</span>}</td>
+                    <td style={{ display: "flex", gap: 6 }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => startEdit(s)}>Edit</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s.id)}>Remove</button>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            )}
-
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Attendance History</h3>
-              <div className="field">
-                <label>Filter by subject</label>
-                <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
-                  <option value="">All subjects</option>
-                  {data.bySubject.map((s) => <option key={s.subjectId} value={s.subjectId}>{s.subjectName}</option>)}
-                </select>
-              </div>
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Date</th><th>Subject</th><th>Status</th></tr></thead>
-                  <tbody>
-                    {data.records.map((r) => (
-                      <tr key={r.id}>
-                        <td>{new Date(r.date).toLocaleDateString()}</td>
-                        <td>{r.subject}{r.topic && r.topic !== "General" ? ` — ${r.topic}` : ""}</td>
-                        <td><StatusBadge status={r.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {data.records.length === 0 && <div className="hint">No attendance recorded yet.</div>}
-              </div>
-            </div>
-          </>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
