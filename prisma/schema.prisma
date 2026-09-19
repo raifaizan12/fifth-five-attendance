@@ -1,4 +1,4 @@
-// Prisma schema for IUB BS IT - Fifth Five Attendance Portal
+// Prisma schema for IUB BS IT - 5th-5M Attendance Portal
 // Free-tier Postgres (Neon / Supabase) works fine with this schema.
 
 generator client {
