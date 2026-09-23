@@ -11,12 +11,26 @@ export async function GET() {
       prisma.discussionPost.findMany({
         orderBy: { createdAt: "desc" },
         take: 50,
-        include: { student: { select: { fullName: true, iubId: true } } }
+        include: {
+          student: {
+            select: {
+              fullName: true,
+              iubId: true
+            }
+          }
+        }
       }),
       prisma.studentIssue.findMany({
         orderBy: { createdAt: "desc" },
         take: 50,
-        include: { student: { select: { fullName: true, iubId: true } } }
+        include: {
+          student: {
+            select: {
+              fullName: true,
+              iubId: true
+            }
+          }
+        }
       })
     ]);
 
@@ -24,6 +38,7 @@ export async function GET() {
   }
 
   const studentId = session!.user.studentId;
+
   if (!studentId) {
     return NextResponse.json(
       { error: "Student profile not found" },
@@ -35,7 +50,14 @@ export async function GET() {
     prisma.discussionPost.findMany({
       orderBy: { createdAt: "desc" },
       take: 30,
-      include: { student: { select: { fullName: true, iubId: true } } }
+      include: {
+        student: {
+          select: {
+            fullName: true,
+            iubId: true
+          }
+        }
+      }
     }),
     prisma.studentIssue.findMany({
       where: { studentId },
@@ -52,6 +74,7 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   const studentId = session!.user.studentId;
+
   if (!studentId) {
     return NextResponse.json(
       { error: "Student profile not found" },
@@ -60,21 +83,33 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
+
   const type = String(body.type || "");
   const message = String(body.message || "").trim();
 
   if (!message || message.length > 1000) {
     return NextResponse.json(
-      { error: "Message is required and must be under 1000 characters" },
+      {
+        error:
+          "Message is required and must be under 1000 characters"
+      },
       { status: 400 }
     );
   }
 
   if (type === "discussion") {
     const post = await prisma.discussionPost.create({
-      data: { message, studentId },
+      data: {
+        message,
+        studentId
+      },
       include: {
-        student: { select: { fullName: true, iubId: true } }
+        student: {
+          select: {
+            fullName: true,
+            iubId: true
+          }
+        }
       }
     });
 
@@ -95,10 +130,17 @@ export async function POST(req: NextRequest) {
       : "Other";
 
     const item = await prisma.studentIssue.create({
-      data: { category, message, studentId }
+      data: {
+        category,
+        message,
+        studentId
+      }
     });
 
-    return NextResponse.json({ issue: item }, { status: 201 });
+    return NextResponse.json(
+      { issue: item },
+      { status: 201 }
+    );
   }
 
   return NextResponse.json(
@@ -120,6 +162,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
+
   const type = String(body.type || "");
   const id = String(body.id || "");
 
@@ -131,9 +174,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (type === "issue") {
-    const status = ["OPEN", "IN_PROGRESS", "RESOLVED"].includes(
-      String(body.status)
-    )
+    const status = [
+      "OPEN",
+      "IN_PROGRESS",
+      "RESOLVED"
+    ].includes(String(body.status))
       ? String(body.status)
       : "OPEN";
 
@@ -174,9 +219,13 @@ export async function DELETE(req: NextRequest) {
   }
 
   if (type === "issue") {
-    await prisma.studentIssue.delete({ where: { id } });
+    await prisma.studentIssue.delete({
+      where: { id }
+    });
   } else if (type === "discussion") {
-    await prisma.discussionPost.delete({ where: { id } });
+    await prisma.discussionPost.delete({
+      where: { id }
+    });
   } else {
     return NextResponse.json(
       { error: "Unsupported item" },

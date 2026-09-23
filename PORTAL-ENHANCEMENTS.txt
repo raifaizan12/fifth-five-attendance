@@ -1,4 +1,5 @@
-5th-5M Portal - Premium UI & Student Portal & CR Management Update
+<<<<<<< HEAD
+5th-5M Portal - Premium UI & CR Management Update
 
 What was added without removing existing functionality:
 - Premium responsive UI polish across the portal.
@@ -6,29 +7,39 @@ What was added without removing existing functionality:
 - Today and Tomorrow timetable preview on Student Portal.
 - CR Timetable Manager has quick Today/Tomorrow controls; the existing full-week timetable management remains unchanged.
 - Student Feedback manager in CR Portal for discussion posts and reported issues, including issue status management and removal.
-- Personalized student dashboard / welcome card.
-- Notification center from announcements, assignments and exams.
-- Today's classes and next-class countdown.
-- Assignment tracker for pending/overdue assignments.
-- Exam countdown.
-- Attendance calculator.
-- Subject dashboard with teacher and attendance information.
-- Class discussion / Q&A.
-- Student issue reporting.
-- Student profile API (/api/me).
 - Existing Class Hub, polls/vote records, assignments, exams, study materials, photo slider, attendance, reports, leaderboard and student tools remain available.
 
+Database note:
+The Settings table now has a nullable portalLogoUrl field. After deploying this version, run:
+  npx prisma db push
+against the same DATABASE_URL used by the portal, then redeploy if needed.
+=======
+STUDENT PORTAL ENHANCEMENTS
+
+Added without removing the existing attendance, timetable, Class Hub, photo slider, leaderboard, or poll voting features.
+
+New portal features:
+1. Personalized dashboard / welcome card
+2. Notification center from announcements, assignments and exams
+3. Today's classes
+4. Next class countdown
+5. Assignment tracker (pending/overdue)
+6. Exam countdown
+7. Attendance calculator
+8. Subject dashboard with teacher + attendance
+9. Class discussion / Q&A
+10. Student issue reporting
+11. Student profile API (/api/me)
+
 Database additions:
-- Settings.portalLogoUrl (nullable)
 - DiscussionPost
 - StudentIssue
 
-Deployment note:
-Keep your existing .env / DATABASE_URL. Never commit .env.
-
-After replacing/updating the project against the same live DATABASE_URL, run:
+IMPORTANT:
+- Keep your existing .env / DATABASE_URL. Never commit .env.
+- After replacing/updating the project run:
   npx prisma db push
   npx prisma generate
   npm run build
-
-Then commit and push to GitHub so Vercel can deploy the fixed version.
+- Then commit and push to GitHub.
+>>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26

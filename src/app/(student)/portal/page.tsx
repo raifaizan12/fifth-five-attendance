@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
+import PortalLogo from "@/components/PortalLogo";
 import CountUp from "@/components/CountUp";
 import Confetti from "@/components/Confetti";
 import ShareCard from "@/components/ShareCard";
@@ -338,7 +339,7 @@ export default function PortalPage() {
       <div className="topbar">
         <div className="topbar-inner">
           <div className="brand-cluster">
-            {portalSettings.portalLogoUrl ? <span className="portal-logo" style={{ width: 44, height: 44 }}><img src={portalSettings.portalLogoUrl} alt="Portal logo" /></span> : <BrandMark />}
+            <PortalLogo size={52} fallback={<BrandMark />} />
             <div>
               <h1>{portalSettings.className || "5th-5M"} <span className="topbar-accent">Student Portal</span></h1>
               <div className="sub">{portalSettings.program || "BS Information Technology"} · {portalSettings.university || "IUB"}</div>
@@ -378,7 +379,7 @@ export default function PortalPage() {
           </div>
         )}
 
-        {timetable.length > 0 && <><TodayClasses entries={timetable} /><TomorrowClasses entries={timetable} /><NextClass entries={timetable} /></>}
+        
         <div className="stat-grid">
           <div className="stat-card"><div className="label">ATTENDANCE</div><div className="value">{data ? `${data.overallPercentage}%` : "—"}</div></div>
           <div className="stat-card"><div className="label">PENDING WORK</div><div className="value">{hub.assignments.filter((x:any)=>new Date(x.dueDate).getTime()>=Date.now()).length}</div></div>
