@@ -358,8 +358,6 @@ tbody tr:hover { background: rgba(126, 171, 204, 0.05); }
 .subject-card { align-items:center; }
 @media (max-width:720px) { .feature-grid,.subject-cards { grid-template-columns:1fr; } .dashboard-hero,.next-class-card { align-items:flex-start; flex-direction:column; } .calc-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .notification-panel { right:-8px; } }
 @media (max-width:420px) { .calc-grid { grid-template-columns:1fr 1fr; } .next-countdown { font-size:22px; } }
-<<<<<<< HEAD
-
 
 /* ---------------- Premium portal polish ---------------- */
 .topbar { box-shadow: 0 12px 34px -26px rgba(34,211,238,.45); }
@@ -392,5 +390,3 @@ tbody tr:hover { background: rgba(126, 171, 204, 0.05); }
 .feedback-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }.feedback-item{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid rgba(126,171,204,.1)}.feedback-item:last-child{border-bottom:0}.feedback-item p{margin:7px 0 0;color:var(--ink-dim);font-size:13px;white-space:pre-wrap}.feedback-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 @media(max-width:760px){.topbar-actions .live-pill{display:none}.settings-layout,.feedback-grid{grid-template-columns:1fr}.settings-brand-card{position:static}.quick-days{align-items:stretch;flex-direction:column}.quick-day-buttons{width:100%}.day-jump{flex:1;min-width:0}.tomorrow-grid{grid-template-columns:1fr}.page-heading{flex-direction:column}.form-two{grid-template-columns:1fr}}
 @media(max-width:480px){.topbar h1{font-size:14px}.topbar .sub{font-size:10px}.page{padding-left:12px;padding-right:12px}.card{padding:14px}.quick-day-buttons{flex-direction:column}.day-jump{width:100%}}
-=======
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
