@@ -25,10 +25,7 @@ type TimetableEntry = { id: string; day: string; startTime: string; endTime: str
 type DiscussionPost = { id: string; message: string; createdAt: string; student: { fullName: string; iubId: string } };
 type Issue = { id: string; category: string; message: string; status: string; createdAt: string };
 type NotificationItem = { id: string; icon: string; title: string; meta: string; kind: string };
-<<<<<<< HEAD
 type PortalSettings = { portalLogoUrl?: string | null; className?: string; university?: string; program?: string; semester?: string; academicYear?: string; attendanceThreshold?: number };
-=======
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
 
 
 function StatusBadge({ status }: { status: string }) {
@@ -167,7 +164,6 @@ function TodayClasses({ entries }: { entries: TimetableEntry[] }) {
   </div>;
 }
 
-<<<<<<< HEAD
 function TomorrowClasses({ entries }: { entries: TimetableEntry[] }) {
   const tomorrow = new Date(Date.now() + 86400000).toLocaleDateString("en-US", { weekday: "long" });
   const classes = entries.filter((x) => x.day === tomorrow).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -177,8 +173,6 @@ function TomorrowClasses({ entries }: { entries: TimetableEntry[] }) {
   </div>;
 }
 
-=======
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
 function NextClass({ entries }: { entries: TimetableEntry[] }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
@@ -260,10 +254,7 @@ export default function PortalPage() {
   const [hub, setHub] = useState<{announcements: HubItem[]; assignments: HubItem[]; exams: HubItem[]; materials: HubItem[]; polls: HubItem[]}>({ announcements: [], assignments: [], exams: [], materials: [], polls: [] });
   const [me, setMe] = useState<MeData | null>(null);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-<<<<<<< HEAD
   const [portalSettings, setPortalSettings] = useState<PortalSettings>({});
-=======
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
 
   useEffect(() => {
     fetch("/api/me").then((r) => (r.ok ? r.json() : null)).then((d) => setMe(d)).catch(() => {});
@@ -291,10 +282,7 @@ export default function PortalPage() {
 
         setData(hist);
         setThreshold(settings.settings?.attendanceThreshold ?? 75);
-<<<<<<< HEAD
         setPortalSettings(settings.settings || {});
-=======
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
       })
       .catch((e: unknown) => {
         setError(e instanceof Error ? e.message : "Something went wrong loading your attendance.");
@@ -349,19 +337,11 @@ export default function PortalPage() {
     <div>
       <div className="topbar">
         <div className="topbar-inner">
-<<<<<<< HEAD
           <div className="brand-cluster">
             {portalSettings.portalLogoUrl ? <span className="portal-logo" style={{ width: 44, height: 44 }}><img src={portalSettings.portalLogoUrl} alt="Portal logo" /></span> : <BrandMark />}
             <div>
               <h1>{portalSettings.className || "5th-5M"} <span className="topbar-accent">Student Portal</span></h1>
               <div className="sub">{portalSettings.program || "BS Information Technology"} · {portalSettings.university || "IUB"}</div>
-=======
-          <div>
-            <BrandMark />
-            <div>
-              <h1>My Attendance</h1>
-              <div className="sub">BS IT · Fifth Five · IUB</div>
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
             </div>
           </div>
           <button className="logout-btn" onClick={() => signOut({ callbackUrl: "/login" })}>Log out</button>
@@ -398,11 +378,7 @@ export default function PortalPage() {
           </div>
         )}
 
-<<<<<<< HEAD
         {timetable.length > 0 && <><TodayClasses entries={timetable} /><TomorrowClasses entries={timetable} /><NextClass entries={timetable} /></>}
-=======
-        {timetable.length > 0 && <><TodayClasses entries={timetable} /><NextClass entries={timetable} /></>}
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
         <div className="stat-grid">
           <div className="stat-card"><div className="label">ATTENDANCE</div><div className="value">{data ? `${data.overallPercentage}%` : "—"}</div></div>
           <div className="stat-card"><div className="label">PENDING WORK</div><div className="value">{hub.assignments.filter((x:any)=>new Date(x.dueDate).getTime()>=Date.now()).length}</div></div>

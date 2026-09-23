@@ -11,10 +11,7 @@ const schema = z.object({
   semester: z.string().optional(),
   academicYear: z.string().optional(),
   attendanceThreshold: z.number().min(1).max(100).optional(),
-<<<<<<< HEAD
   portalLogoUrl: z.string().max(900000).optional().nullable(),
-=======
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
 });
 
 export async function GET() {

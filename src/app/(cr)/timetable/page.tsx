@@ -28,11 +28,8 @@ export default function TimetablePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-<<<<<<< HEAD
   const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
   const tomorrowName = new Date(Date.now() + 86400000).toLocaleDateString("en-US", { weekday: "long" });
-=======
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
 
   async function load() {
     setLoading(true);
@@ -107,7 +104,6 @@ export default function TimetablePage() {
 
   return (
     <div>
-<<<<<<< HEAD
       <div className="page-heading">
         <div><div className="eyebrow">SCHEDULE CONTROL</div><h2>Timetable Manager</h2><p>Today and tomorrow are controlled here by the CR. Changes appear instantly on the Student Portal.</p></div>
         <span className="live-pill"><i /> Student Sync On</span>
@@ -121,10 +117,6 @@ export default function TimetablePage() {
       </div>
       <div className="card">
         <h3 style={{ marginTop: 0 }}>{editingId ? "Edit Class" : `Add ${form.day} Class`}</h3>
-=======
-      <div className="card">
-        <h3 style={{ marginTop: 0 }}>{editingId ? "Edit Class" : "Add Class to timetable"}</h3>
->>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label>Day</label>
