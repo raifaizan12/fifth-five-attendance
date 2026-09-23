@@ -1,0 +1,270 @@
+// Prisma schema for IUB BS IT - 5th-5M Attendance Portal
+// Free-tier Postgres (Neon / Supabase) works fine with this schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN   // Class Representative
+  STUDENT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  LEAVE
+}
+
+// One login account per person (CR or Student). Students are linked 1:1 to a Student profile.
+model User {
+  id           String   @id @default(cuid())
+  role         Role
+  email        String?  @unique // used by ADMIN login
+  loginId      String?  @unique // IUB ID / Registration Number, used by STUDENT login
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student   Student? @relation(fields: [studentId], references: [id])
+  studentId String?  @unique
+
+  auditLogs AuditLog[]
+
+  @@index([role])
+}
+
+model Student {
+  id           String   @id @default(cuid())
+  fullName     String
+  iubId        String   @unique // e.g. BSIT-F21-045
+  regNumber    String   @unique
+  semester     String
+  program      String   @default("BS Information Technology")
+  section      String   @default("5TH-5M")
+  email        String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user               User?
+  attendanceRecords  AttendanceRecord[]
+  pollVotes          PollVote[]
+  discussionPosts    DiscussionPost[]
+  issues             StudentIssue[]
+
+  @@index([section])
+  @@index([semester])
+}
+
+model Teacher {
+   timetableEntries TimetableEntry[]
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+
+  subjects           Subject[]
+  attendanceSessions AttendanceSession[]
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  code      String?  @unique
+  semester  String?
+  createdAt DateTime @default(now())
+
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  teacherId String?
+
+  sessions AttendanceSession[]
+   timetableEntries TimetableEntry[]
+
+  @@index([semester])
+}
+
+// One session = one class held on a specific date (e.g. "Web Eng - 12 Aug 2026, Lecture")
+model AttendanceSession {
+  id        String   @id @default(cuid())
+  date      DateTime
+  topic     String?
+  createdAt DateTime @default(now())
+
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId String
+
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  teacherId String?
+
+  createdBy String // User id of CR who created it
+
+  records AttendanceRecord[]
+
+  // A subject cannot have two sessions on the same date+topic (prevents accidental duplicates)
+  @@unique([subjectId, date, topic])
+  @@index([date])
+}
+
+model AttendanceRecord {
+  id        String            @id @default(cuid())
+  status    AttendanceStatus
+  markedAt  DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  session   AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+
+  // Prevents duplicate attendance for the same student in the same session
+  @@unique([sessionId, studentId])
+  @@index([studentId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String   // e.g. "STUDENT_ADDED", "ATTENDANCE_MODIFIED"
+  affectedType String   // e.g. "Student", "AttendanceRecord"
+  affectedId   String?
+  details      String?
+  createdAt    DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@index([createdAt])
+}
+
+model Settings {
+  id                  Int    @id @default(1)
+  className           String @default("Fifth Five")
+  university          String @default("The Islamia University of Bahawalpur")
+  program             String @default("BS Information Technology")
+  semester            String @default("")
+  academicYear        String @default("")
+  attendanceThreshold Int    @default(75)
+  portalLogoUrl       String? @db.Text
+}
+
+model TimetableEntry {
+  id        String   @id @default(cuid())
+  day       String   // "Monday" .. "Sunday"
+  startTime String   // 24-hour "HH:MM", e.g. "09:00"
+  endTime   String   // 24-hour "HH:MM", e.g. "10:30"
+  room      String?
+  section   String   @default("Fifth Five")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId String
+
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  teacherId String?
+
+  @@index([day])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   @db.Text
+  priority  String   @default("NORMAL")
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  subject     String?
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ExamEvent {
+  id        String   @id @default(cuid())
+  title     String
+  subject   String
+  date      DateTime
+  startTime String?
+  room      String?
+  kind      String   @default("EXAM")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StudyMaterial {
+  id          String   @id @default(cuid())
+  title       String
+  subject     String?
+  url         String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+}
+
+model ClassPoll {
+  id        String     @id @default(cuid())
+  question  String
+  options   String     @db.Text
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  votes     PollVote[]
+}
+
+model PollVote {
+  id        String     @id @default(cuid())
+  poll      ClassPoll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  pollId    String
+  student   Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+  option    String
+  createdAt DateTime   @default(now())
+
+  @@unique([pollId, studentId])
+}
+
+model DiscussionPost {
+  id        String   @id @default(cuid())
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+  @@index([createdAt])
+}
+
+model StudentIssue {
+  id        String   @id @default(cuid())
+  category  String
+  message   String   @db.Text
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+  @@index([studentId])
+  @@index([createdAt])
+}
+
+model ClassPhoto {
+  id        String   @id @default(cuid())
+  caption   String?
+  imageData String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
