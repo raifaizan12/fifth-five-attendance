@@ -33,7 +33,7 @@ export default function LoginPage() {
   return (
     <div className="login-wrap">
       <div className={`login-card ${role === "ADMIN" ? "login-card-cr" : "login-card-student"}`}>
-        <h1>Fifth Five Attendance Portal</h1>
+        <h1>5M(2024-28) Portal</h1>
         <div className="sub">BS Information Technology · The Islamia University of Bahawalpur</div>
 
         <div className="role-toggle">
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label>{role === "ADMIN" ? "CR Email" : "IUB ID / Registration Number"}</label>
+            <label>{role === "ADMIN" ? "CR Email" : " Registration Number"}</label>
             <input
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
