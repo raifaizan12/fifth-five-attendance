@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrap">
-      <div className="login-card">
+      <div className={`login-card ${role === "ADMIN" ? "login-card-cr" : "login-card-student"}`}>
         <h1>Fifth Five Attendance Portal</h1>
         <div className="sub">BS Information Technology · The Islamia University of Bahawalpur</div>
 

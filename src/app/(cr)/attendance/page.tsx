@@ -6,6 +6,7 @@ type Subject = { id: string; name: string; teacherId?: string | null };
 type Teacher = { id: string; fullName: string };
 type RosterStudent = { id: string; fullName: string; iubId: string; existingStatus: string | null };
 type Status = "PRESENT" | "ABSENT" | "LATE" | "LEAVE";
+type AttendanceSession = { id: string; date: string; topic: string | null; subject: string; teacher: string | null; present: number; absent: number; late: number; leave: number; total: number };
 
 const STATUSES: Status[] = ["PRESENT", "ABSENT", "LATE", "LEAVE"];
 
@@ -21,8 +22,11 @@ export default function AttendancePage() {
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [sessions, setSessions] = useState<AttendanceSession[]>([]);
+  const [deletingId, setDeletingId] = useState("");
 
   useEffect(() => {
+    refreshSessions();
     Promise.all([fetch("/api/subjects").then((r) => r.json()), fetch("/api/teachers").then((r) => r.json())]).then(([s, t]) => {
       setSubjects(s.subjects || []);
       setTeachers(t.teachers || []);
@@ -35,6 +39,12 @@ export default function AttendancePage() {
       if (subj?.teacherId) setTeacherId(subj.teacherId);
     }
   }, [subjectId, subjects]);
+
+  async function refreshSessions() {
+    const res = await fetch("/api/attendance/sessions?limit=50");
+    const data = await res.json();
+    setSessions(data.sessions || []);
+  }
 
   async function loadRoster() {
     if (!subjectId || !date) return;
@@ -75,6 +85,39 @@ export default function AttendancePage() {
     setSaving(false);
     if (!res.ok) { setMessage("Error: " + (data.error || "could not save")); return; }
     setMessage(`Attendance saved for ${data.count} students.`);
+    await refreshSessions();
+  }
+
+  async function editSession(session: AttendanceSession) {
+    const matchedSubject = subjects.find((item) => item.name === session.subject);
+    if (!matchedSubject) { setMessage("This session's subject is no longer available."); return; }
+    setSubjectId(matchedSubject.id);
+    setTeacherId(teachers.find((item) => item.fullName === session.teacher)?.id || "");
+    setDate(new Date(session.date).toISOString().slice(0, 10));
+    setTopic(session.topic || "General");
+    setMessage("Session loaded. Update the statuses below and save your changes.");
+    setLoadingRoster(true);
+    const params = new URLSearchParams({ subjectId: matchedSubject.id, date: new Date(session.date).toISOString().slice(0, 10), topic: session.topic || "General" });
+    const response = await fetch(`/api/attendance/roster?${params}`);
+    const data = await response.json();
+    setRoster(data.students || []);
+    const initial: Record<string, Status> = {};
+    for (const student of data.students || []) initial[student.id] = (student.existingStatus as Status) || "PRESENT";
+    setStatuses(initial);
+    setLoadingRoster(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function deleteSession(session: AttendanceSession) {
+    if (!window.confirm(`Delete attendance for ${session.subject} on ${new Date(session.date).toLocaleDateString()}? This also removes its student records.`)) return;
+    setDeletingId(session.id);
+    const response = await fetch(`/api/attendance/sessions/${session.id}`, { method: "DELETE" });
+    const data = await response.json();
+    setDeletingId("");
+    if (!response.ok) { setMessage(`Error: ${data.error || "Could not delete session"}`); return; }
+    setMessage("Attendance session deleted.");
+    if (roster.length) setRoster([]);
+    await refreshSessions();
   }
 
   const counts = STATUSES.reduce((acc, st) => {
@@ -111,6 +154,16 @@ export default function AttendancePage() {
         <button className="btn btn-primary btn-block" disabled={!subjectId || !date} onClick={loadRoster}>
           {loadingRoster ? "Loading students..." : "Load Student List"}
         </button>
+      </div>
+
+      <div className="card attendance-history-card">
+        <div className="attendance-history-heading"><div><h3>Manage Saved Attendance</h3><p>Edit a saved session or remove it from the CR portal.</p></div><span className="attendance-count">{sessions.length} sessions</span></div>
+        {sessions.length === 0 ? <div className="hint">No attendance sessions saved yet.</div> : <div className="attendance-session-list">
+          {sessions.map((session) => <div className="attendance-session" key={session.id}>
+            <div className="attendance-session-info"><strong>{session.subject}</strong><span>{new Date(session.date).toLocaleDateString()} · {session.topic || "General"}</span><small>{session.present} present · {session.absent} absent · {session.late} late · {session.leave} leave · {session.total} students</small></div>
+            <div className="attendance-session-actions"><button className="btn btn-secondary btn-sm" onClick={() => editSession(session)}>Edit</button><button className="btn btn-danger btn-sm" disabled={deletingId === session.id} onClick={() => deleteSession(session)}>{deletingId === session.id ? "Deleting…" : "Delete"}</button></div>
+          </div>)}
+        </div>}
       </div>
 
       {roster.length > 0 && (
