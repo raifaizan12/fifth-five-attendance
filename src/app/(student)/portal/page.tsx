@@ -243,6 +243,12 @@ function ClassHubStudent({ hub }: { hub: { announcements: HubItem[]; assignments
 }
 
 export default function PortalPage() {
+  useEffect(() => {
+    const heartbeat = () => fetch("/api/student-sessions", { method: "POST" }).catch(() => {});
+    heartbeat();
+    const timer = setInterval(heartbeat, 45000);
+    return () => clearInterval(timer);
+  }, []);
   const [data, setData] = useState<HistoryData | null>(null);
   const [threshold, setThreshold] = useState(75);
   const [loading, setLoading] = useState(true);

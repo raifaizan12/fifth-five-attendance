@@ -37,6 +37,7 @@ model User {
   studentId String?  @unique
 
   auditLogs AuditLog[]
+  loginSessions LoginSession[]
 
   @@index([role])
 }
@@ -267,4 +268,16 @@ model ClassPhoto {
   imageData String   @db.Text
   order     Int      @default(0)
   createdAt DateTime @default(now())
+}
+
+model LoginSession {
+  id         String    @id @default(cuid())
+  userId     String
+  loginAt    DateTime  @default(now())
+  lastActive DateTime  @default(now())
+  logoutAt   DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, loginAt])
+  @@index([logoutAt, lastActive])
 }
