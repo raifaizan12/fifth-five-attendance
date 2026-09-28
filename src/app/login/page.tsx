@@ -33,12 +33,9 @@ export default function LoginPage() {
   return (
     <div className="login-wrap">
       <div className={`login-card ${role === "ADMIN" ? "login-card-cr" : "login-card-student"}`}>
-        <div className="login-brand-mark" aria-hidden="true"><span>5M</span></div>
-        <div className="login-eyebrow">THE ISLAMIA UNIVERSITY OF BAHAWALPUR</div>
-        <h1>Class Portal</h1>
+        <h1>5M(2024-28) Portal</h1>
         <div className="sub">BS Information Technology · The Islamia University of Bahawalpur</div>
 
-        <div className="login-welcome">Your academic space, organized in one place.</div>
         <div className="role-toggle">
           <button type="button" className={role === "STUDENT" ? "active" : ""} onClick={() => setRole("STUDENT")}>
             Student
@@ -70,8 +67,7 @@ export default function LoginPage() {
           </div>
           {error && <div className="error-text">{error}</div>}
           <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading ? "Signing in..." : "Continue to portal"}
-            {!loading && <span aria-hidden="true">→</span>}
+            {loading ? "Signing in..." : "Log In"}
           </button>
         </form>
         <div className="hint">
