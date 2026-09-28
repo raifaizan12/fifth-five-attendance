@@ -526,3 +526,82 @@ tbody tr:hover { background: rgba(126, 171, 204, 0.05); }
 .btn { border-radius:11px; }
 .btn-primary { box-shadow:0 8px 22px rgba(34,211,238,.12); }
 @media(max-width:640px){.page{padding:15px 12px 80px}.card{padding:15px;border-radius:15px}.topbar{padding:12px}.nav-tabs{padding:9px 12px}}
+
+
+/* Premium portal refinement: visual-only enhancements; application logic unchanged. */
+:root {
+  --edge: rgba(148, 163, 184, .18);
+  --edge-strong: rgba(148, 163, 184, .32);
+  --radius: 18px;
+}
+html { scroll-behavior: smooth; }
+body { background-color: #070b16; }
+.topbar {
+  background: rgba(8, 14, 27, .84);
+  border-bottom: 1px solid rgba(148, 163, 184, .16);
+  box-shadow: 0 12px 40px rgba(0,0,0,.18);
+}
+.topbar-inner { max-width: 1440px; padding-inline: 8px; }
+.topbar h1 { letter-spacing: -.035em; font-size: 17px; }
+.topbar .sub { color: #9aaac2; }
+.nav-tabs {
+  position: sticky; top: 70px; z-index: 19;
+  background: rgba(9, 15, 29, .78);
+  border-bottom: 1px solid rgba(148,163,184,.14);
+  padding: 11px max(16px, calc((100vw - 1424px)/2));
+  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+}
+.nav-tab { border-radius: 11px; transition: color .22s ease, background .22s ease, border-color .22s ease, transform .22s ease; }
+.nav-tab:hover { transform: translateY(-1px); }
+.nav-tab.active { box-shadow: inset 0 0 0 1px rgba(34,211,238,.08), 0 5px 18px rgba(34,211,238,.08); }
+.page { max-width: 1440px; padding: 30px clamp(16px, 3vw, 42px) 100px; animation: portal-page-enter .55s cubic-bezier(.2,.75,.25,1) both; }
+.card, .stat-card, .hub-card, .subject-card, .next-class-card, .tomorrow-card {
+  border: 1px solid rgba(148,163,184,.17);
+  box-shadow: 0 18px 55px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.025);
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease;
+}
+.card { border-radius: 20px; background: linear-gradient(145deg, rgba(19,31,51,.82), rgba(11,19,34,.82)); }
+.card:hover, .stat-card:hover, .hub-card:hover, .subject-card:hover {
+  border-color: rgba(103,232,249,.34);
+  box-shadow: 0 22px 60px rgba(0,0,0,.27), 0 0 0 1px rgba(103,232,249,.035);
+}
+.stat-grid { gap: 14px; }
+.stat-card { border-radius: 17px; padding: 19px; background: linear-gradient(145deg, rgba(22,36,58,.9), rgba(12,21,37,.9)); animation: portal-card-enter .55s both; }
+.stat-card .label { text-transform: uppercase; letter-spacing: .085em; font-size: 10.5px; font-weight: 700; color: #9aacc4; }
+.stat-card .value { font-size: clamp(25px, 3vw, 32px); letter-spacing: -.04em; }
+.btn, .logout-btn, .notification-btn, .status-btn { transition: transform .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease, filter .2s ease; }
+.btn:hover:not(:disabled), .logout-btn:hover, .notification-btn:hover { transform: translateY(-2px); box-shadow: 0 9px 24px rgba(0,0,0,.2); }
+.btn:active:not(:disabled), .logout-btn:active { transform: translateY(0) scale(.985); }
+input, select, textarea { transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: rgba(103,232,249,.65)!important; box-shadow: 0 0 0 4px rgba(34,211,238,.10); }
+table tr { transition: background .18s ease; }
+tbody tr:hover { background: rgba(103,232,249,.045); }
+.dashboard-hero { padding: clamp(20px, 3vw, 32px); border-radius: 22px; background: radial-gradient(ellipse at 90% 0%, rgba(99,102,241,.16), transparent 48%), linear-gradient(135deg, rgba(20,34,57,.95), rgba(10,19,35,.95)); }
+.dashboard-hero h2, .dashboard-hero h1 { letter-spacing: -.045em; }
+.section-head { margin-bottom: 14px; }
+.section-head h3, .card h3 { letter-spacing: -.025em; }
+.feature-grid, .hub-grid, .subject-cards { gap: 16px; }
+.hub-item, .discussion-item, .today-class, .tracker-row { transition: background .2s ease, padding .2s ease; border-radius: 10px; }
+.hub-item:hover, .discussion-item:hover, .today-class:hover { background: rgba(148,163,184,.045); }
+.attendance-session { border-radius: 15px; }
+.login-card { box-shadow: 0 28px 90px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06); }
+.login-card .btn-primary { transition: transform .22s ease, box-shadow .22s ease, filter .22s ease; }
+.login-card .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.06); }
+@keyframes portal-page-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes portal-card-enter { from { opacity: 0; transform: translateY(12px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.stat-grid > :nth-child(2) { animation-delay: .05s; }
+.stat-grid > :nth-child(3) { animation-delay: .10s; }
+.stat-grid > :nth-child(4) { animation-delay: .15s; }
+@media (min-width: 1100px) { .page { padding-top: 34px; } }
+@media (max-width: 760px) {
+  .nav-tabs { top: 62px; padding: 9px 12px; }
+  .page { padding: 20px 13px 80px; }
+  .topbar { padding: 12px; }
+  .topbar .sub { display: none; }
+  .card { border-radius: 17px; padding: 15px; }
+  .dashboard-hero { align-items: flex-start; flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
