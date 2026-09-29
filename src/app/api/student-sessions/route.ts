@@ -13,11 +13,21 @@ export async function GET() {
     include: { user: { include: { student: true } } },
     orderBy: { lastActive: "desc" },
   });
-  return NextResponse.json({ sessions: sessions.map((item) => ({
-    id: item.id, name: item.user.student?.fullName ?? "Student",
+  const history = await prisma.loginSession.findMany({
+    where: { user: { role: "STUDENT" } },
+    include: { user: { include: { student: true } } },
+    orderBy: { loginAt: "desc" },
+    take: 50,
+  });
+  const formatSession = (item: (typeof history)[number]) => ({
+    id: item.id,
+    name: item.user.student?.fullName ?? "Student",
     iubId: item.user.student?.iubId ?? item.user.loginId ?? "—",
-    loginAt: item.loginAt, lastActive: item.lastActive,
-  })) });
+    loginAt: item.loginAt,
+    lastActive: item.lastActive,
+    logoutAt: item.logoutAt,
+  });
+  return NextResponse.json({ sessions: sessions.map(formatSession), history: history.map(formatSession) });
 }
 
 export async function POST(_req: NextRequest) {
