@@ -63,11 +63,8 @@ export default function LoginPage() {
           <section role="status" aria-live="polite" style={{marginTop:20,padding:"22px 20px",borderRadius:18,background:"linear-gradient(135deg,#eff6ff 0%,#f5f3ff 100%)",border:"1px solid #dbeafe",textAlign:"center",color:"#1e293b"}}>
             <div aria-hidden="true" style={{fontSize:34,marginBottom:10}}>🛠️</div>
             <h2 style={{fontSize:21,fontWeight:750,margin:"0 0 10px",color:"#1e3a8a"}}>We’ll Be Back Soon</h2>
-            <p style={{fontSize:14,lineHeight:1.75,margin:"0 auto",maxWidth:390,color:"#334155"}}>
-              {maintenance.maintenanceMessage?.trim() || "The student portal is temporarily unavailable while we carry out scheduled maintenance. Please check back soon."}
-            </p>
-            <p style={{fontSize:13,lineHeight:1.6,margin:"16px 0 0",color:"#475569"}}>
-              Thank you for your patience and understanding.
+            <p style={{fontSize:14,lineHeight:1.75,margin:"0 auto",maxWidth:390,color:"#334155",whiteSpace:"pre-wrap"}}>
+              {maintenance.maintenanceMessage?.trim() || "The student portal is temporarily unavailable. Please check back soon."}
             </p>
             <div style={{height:1,background:"#cbd5e1",opacity:.7,margin:"18px 0 12px"}} />
             <p style={{fontSize:13,lineHeight:1.8,margin:0,color:"#334155"}}>
