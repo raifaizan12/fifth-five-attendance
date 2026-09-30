@@ -12,7 +12,28 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [maintenance, setMaintenance] = useState<{maintenanceMode:boolean; maintenanceMessage:string} | null>(null);
-  useEffect(() => { fetch("/api/portal-status").then(r => r.json()).then(setMaintenance).catch(() => setMaintenance(null)); }, []);
+  useEffect(() => {
+    let active = true;
+    const loadStatus = async () => {
+      try {
+        const response = await fetch("/api/portal-status", { cache: "no-store" });
+        if (!response.ok) throw new Error("Unable to load portal status");
+        const data = await response.json();
+        if (active) setMaintenance({
+          maintenanceMode: Boolean(data.maintenanceMode),
+          maintenanceMessage: data.maintenanceMessage || "",
+        });
+      } catch {
+        if (active) setMaintenance({ maintenanceMode: false, maintenanceMessage: "" });
+      }
+    };
+    loadStatus();
+    const interval = window.setInterval(loadStatus, 10000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
