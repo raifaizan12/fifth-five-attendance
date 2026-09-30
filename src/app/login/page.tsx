@@ -38,7 +38,12 @@ export default function LoginPage() {
       <div className={`login-card ${role === "ADMIN" ? "login-card-cr" : "login-card-student"}`}>
         <h1>5M(2024-28) Portal</h1>
         <div className="sub">BS Information Technology · The Islamia University of Bahawalpur</div>
-        {maintenance?.maintenanceMode && <div className="error-text" role="status" style={{marginTop:12}}>Student portal maintenance: {maintenance.maintenanceMessage}</div>}
+        {maintenance?.maintenanceMode && role === "STUDENT" && (
+          <div role="status" aria-live="polite" style={{ marginTop: 14, padding: "12px 14px", borderRadius: 12, background: "#fff7ed", border: "1px solid #fdba74", color: "#9a3412", textAlign: "left", lineHeight: 1.55 }}>
+            <strong style={{ display: "block", marginBottom: 4 }}>Student portal is under maintenance</strong>
+            <span>{maintenance.maintenanceMessage || "Please check back soon or contact your Class Representative."}</span>
+          </div>
+        )}
 
         <div className="role-toggle">
           <button type="button" className={role === "STUDENT" ? "active" : ""} onClick={() => setRole("STUDENT")}>
