@@ -61,7 +61,6 @@ model Student {
   pollVotes          PollVote[]
   discussionPosts    DiscussionPost[]
   issues             StudentIssue[]
-  notifications      Notification[]
 
   @@index([section])
   @@index([semester])
@@ -188,21 +187,6 @@ model Announcement {
   pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-
-model Notification {
-  id        String   @id @default(cuid())
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-  title     String
-  body      String   @db.Text
-  kind      String   @default("GENERAL")
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([studentId, createdAt])
-  @@index([studentId, read])
 }
 
 model Assignment {

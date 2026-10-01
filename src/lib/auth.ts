@@ -43,6 +43,10 @@ export const authOptions: NextAuthOptions = {
 
         resetRateLimit(`login:${credentials.identifier.toLowerCase()}`);
 
+        if (user.role === "STUDENT") {
+          await prisma.loginSession.create({ data: { userId: user.id } });
+        }
+
         return {
           id: user.id,
           role: user.role,
@@ -69,6 +73,16 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.uid;
       }
       return session;
+    },
+  },
+  events: {
+    async signOut({ token }) {
+      if (token?.uid) {
+        await prisma.loginSession.updateMany({
+          where: { userId: String(token.uid), logoutAt: null },
+          data: { logoutAt: new Date() },
+        });
+      }
     },
   },
   secret: process.env.NEXTAUTH_SECRET,

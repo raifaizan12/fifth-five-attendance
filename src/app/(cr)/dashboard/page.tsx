@@ -44,6 +44,20 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSessions, setActiveSessions] = useState<{ id: string; name: string; iubId: string; loginAt: string; lastActive: string }[]>([]);
+  const [sessionHistory, setSessionHistory] = useState<{ id: string; name: string; iubId: string; loginAt: string; lastActive: string; logoutAt: string | null }[]>([]);
+
+  useEffect(() => {
+    const loadActiveSessions = async () => {
+      try {
+        const response = await fetch("/api/student-sessions", { cache: "no-store" });
+        if (response.ok) { const result = await response.json(); setActiveSessions(result.sessions || []); setSessionHistory(result.history || []); }
+      } catch {}
+    };
+    loadActiveSessions();
+    const sessionTimer = setInterval(loadActiveSessions, 15000);
+    return () => clearInterval(sessionTimer);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -131,6 +145,49 @@ export default function DashboardPage() {
 
   return (
     <div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 18 }}>Student Login Sessions</h2>
+            <p className="chart-sub" style={{ margin: "5px 0 0" }}>Live activity · refreshes every 15 seconds</p>
+          </div>
+          <span className="chip chip-up">{activeSessions.length} active</span>
+        </div>
+        {activeSessions.length === 0 ? <p className="chart-sub" style={{ marginTop: 16 }}>No students are currently active.</p> : (
+          <div style={{ overflowX: "auto", marginTop: 14 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+              <thead><tr>{["Student", "IUB ID", "Login Time", "Last Active", "Status"].map((label) => <th key={label} style={{ textAlign: "left", padding: "10px 8px", fontSize: 12, opacity: .7, borderBottom: "1px solid var(--border, #334155)" }}>{label}</th>)}</tr></thead>
+              <tbody>{activeSessions.map((item) => <tr key={item.id}>
+                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.name}</td>
+                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.iubId}</td>
+                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.loginAt).toLocaleString()}</td>
+                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.lastActive).toLocaleTimeString()}</td>
+                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}><span className="chip chip-up">Active</span></td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+        )}
+        <div style={{ marginTop: 24 }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>Saved Session History</h3>
+          <p className="chart-sub" style={{ margin: "0 0 10px" }}>Latest 50 student login records are stored in the database, including logout time.</p>
+          {sessionHistory.length === 0 ? <p className="chart-sub">No saved sessions yet.</p> : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
+                <thead><tr>{["Student", "IUB ID", "Login Time", "Last Active", "Logout Time", "Status"].map((label) => <th key={label} style={{ textAlign: "left", padding: "10px 8px", fontSize: 12, opacity: .7, borderBottom: "1px solid var(--border, #334155)" }}>{label}</th>)}</tr></thead>
+                <tbody>{sessionHistory.map((item) => <tr key={item.id}>
+                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.name}</td>
+                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.iubId}</td>
+                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.loginAt).toLocaleString()}</td>
+                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.lastActive).toLocaleString()}</td>
+                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.logoutAt ? new Date(item.logoutAt).toLocaleString() : "—"}</td>
+                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}><span className="chip chip-up">{item.logoutAt ? "Logged out" : "Open session"}</span></td>
+                </tr>)}</tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="stat-grid">
         <div className="stat-card">
           <div className="label">Total Students</div>

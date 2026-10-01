@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireAnyUser, requireStudent } from "@/lib/apiAuth";
+import { createStudentNotifications } from "@/lib/notifications";
 
 const TYPES = ["announcements", "assignments", "exams", "materials", "polls"] as const;
 type Type = typeof TYPES[number];
@@ -41,7 +42,14 @@ export async function POST(req: NextRequest) {
   if (!type) return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   const b = await req.json();
   let item;
-  if (type === "announcements") item = await prisma.announcement.create({ data: { title: String(b.title || ""), body: String(b.body || ""), priority: b.priority || "NORMAL", pinned: !!b.pinned } });
+  if (type === "announcements") {
+    item = await prisma.announcement.create({ data: { title: String(b.title || ""), body: String(b.body || ""), priority: b.priority || "NORMAL", pinned: !!b.pinned } });
+    await createStudentNotifications({
+      title: String(b.title || "New Announcement"),
+      body: String(b.body || ""),
+      kind: "ANNOUNCEMENT",
+    });
+  }
   if (type === "assignments") item = await prisma.assignment.create({ data: { title: String(b.title || ""), description: b.description || null, subject: b.subject || null, dueDate: new Date(b.dueDate) } });
   if (type === "exams") item = await prisma.examEvent.create({ data: { title: String(b.title || ""), subject: String(b.subject || ""), date: new Date(b.date), startTime: b.startTime || null, room: b.room || null, kind: b.kind || "EXAM" } });
   if (type === "materials") item = await prisma.studyMaterial.create({ data: { title: String(b.title || ""), subject: b.subject || null, url: String(b.url || ""), description: b.description || null } });

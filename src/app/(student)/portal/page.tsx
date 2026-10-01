@@ -25,7 +25,7 @@ type MeData = { user: { role: string; student?: { fullName: string; iubId: strin
 type TimetableEntry = { id: string; day: string; startTime: string; endTime: string; room?: string | null; subject: { id: string; name: string }; teacher?: { fullName: string } | null };
 type DiscussionPost = { id: string; message: string; createdAt: string; student: { fullName: string; iubId: string } };
 type Issue = { id: string; category: string; message: string; status: string; createdAt: string };
-type NotificationItem = { id: string; icon: string; title: string; meta: string; kind: string };
+type NotificationItem = { id: string; icon: string; title: string; meta: string; kind: string; body?: string; read?: boolean };
 type PortalSettings = { portalLogoUrl?: string | null; className?: string; university?: string; program?: string; semester?: string; academicYear?: string; attendanceThreshold?: number };
 
 
@@ -211,9 +211,29 @@ function AttendanceCalculator({ data, threshold }: { data: HistoryData; threshol
   return <div className="card"><div className="section-head"><div><h3>🧮 Attendance Calculator</h3><div className="hint">Plan how many upcoming classes you need to attend.</div></div></div><div className="calc-grid"><div><label className="hint">Target %</label><input type="number" min={1} max={100} value={target} onChange={e=>setTarget(Number(e.target.value)||0)} /></div><div><label className="hint">Attend next</label><input type="number" min={0} value={future} onChange={e=>setFuture(Math.max(0,Number(e.target.value)||0))} /></div><div><div className="hint">Projected attendance</div><strong className="calc-big">{after}%</strong></div><div><div className="hint">Needed to reach target</div><strong className="calc-big">{needed > 500 ? "500+" : needed}</strong></div></div></div>;
 }
 
-function NotificationCenter({ items }: { items: NotificationItem[] }) {
+function NotificationCenter({ items, onOpen }: { items: NotificationItem[]; onOpen?: () => void }) {
   const [open, setOpen] = useState(false);
-  return <div className="notification-wrap"><button className="notification-btn" onClick={()=>setOpen(v=>!v)} aria-label="Notifications">🔔{items.length>0&&<span className="notification-count">{Math.min(items.length,9)}</span>}</button>{open&&<div className="notification-panel"><div className="section-head"><strong>Notifications</strong><span className="hint">{items.length} recent</span></div>{items.length===0?<div className="empty-state">You're all caught up.</div>:items.slice(0,8).map(n=><div className="notification-item" key={n.id}><span>{n.icon}</span><div><strong>{n.title}</strong><div className="hint">{n.meta}</div></div></div>)}</div>}</div>;
+  const unread = items.filter((x: any) => !x.read).length;
+  async function toggle() {
+    if (!open && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      try { await Notification.requestPermission(); } catch {}
+    }
+    setOpen(v => !v);
+    onOpen?.();
+  }
+  return <div className="notification-wrap">
+    <button className="notification-btn" onClick={toggle} aria-label="Notifications">
+      🔔{unread > 0 && <span className="notification-count">{Math.min(unread, 9)}</span>}
+    </button>
+    {open && <div className="notification-panel">
+      <div className="section-head"><strong>Notifications</strong><span className="hint">{unread} unread</span></div>
+      {items.length === 0 ? <div className="empty-state">You're all caught up.</div> : items.slice(0, 10).map((n: any) =>
+        <div className="notification-item" key={n.id} style={{opacity:n.read ? .65 : 1}}>
+          <span>{n.icon}</span><div><strong>{n.title}</strong><div className="hint">{n.meta}</div><div className="hint">{n.body}</div></div>
+        </div>
+      )}
+    </div>}
+  </div>;
 }
 
 function DiscussionAndIssues() {
@@ -243,6 +263,12 @@ function ClassHubStudent({ hub }: { hub: { announcements: HubItem[]; assignments
 }
 
 export default function PortalPage() {
+  useEffect(() => {
+    const heartbeat = () => fetch("/api/student-sessions", { method: "POST" }).catch(() => {});
+    heartbeat();
+    const timer = setInterval(heartbeat, 45000);
+    return () => clearInterval(timer);
+  }, []);
   const [data, setData] = useState<HistoryData | null>(null);
   const [threshold, setThreshold] = useState(75);
   const [loading, setLoading] = useState(true);
@@ -256,6 +282,7 @@ export default function PortalPage() {
   const [me, setMe] = useState<MeData | null>(null);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [portalSettings, setPortalSettings] = useState<PortalSettings>({});
+  const [serverNotifications, setServerNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/me").then((r) => (r.ok ? r.json() : null)).then((d) => setMe(d)).catch(() => {});
@@ -327,12 +354,45 @@ export default function PortalPage() {
 
   useEffect(() => { fetch("/api/timetable").then(r=>r.ok?r.json():null).then(d=>setTimetable(d?.entries||[])).catch(()=>{}); }, []);
 
+  useEffect(() => {
+    let firstLoad = true;
+    const loadNotifications = async () => {
+      const r = await fetch("/api/notifications");
+      if (!r.ok) return;
+      const d = await r.json();
+      const incoming = d.notifications || [];
+      if (!firstLoad && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        const seenKey = "fifth-five-notification-ids";
+        const seen = new Set<string>(JSON.parse(localStorage.getItem(seenKey) || "[]"));
+        for (const n of incoming.filter((x:any) => !x.read && !seen.has(x.id)).slice(0, 5)) {
+          try { new Notification(n.title, { body: n.body, tag: n.id }); } catch {}
+          seen.add(n.id);
+        }
+        localStorage.setItem(seenKey, JSON.stringify(Array.from(seen).slice(-100)));
+      }
+      setServerNotifications(incoming);
+      firstLoad = false;
+    };
+    loadNotifications();
+    const timer = setInterval(loadNotifications, 15000);
+    return () => clearInterval(timer);
+  }, []);
+
   const heatmap = useMemo(() => buildHeatmap(data?.records || []), [data]);
   const notifications = useMemo<NotificationItem[]>(() => [
-    ...hub.announcements.slice(0,4).map((x:any)=>({id:`a-${x.id}`,icon:"📢",title:x.title,meta:`Announcement · ${new Date(x.createdAt).toLocaleDateString()}`,kind:"announcement"})),
+    ...serverNotifications.map((n:any) => ({
+      id: n.id,
+      icon: n.kind === "ATTENDANCE" ? "📝" : n.kind === "ANNOUNCEMENT" ? "📢" : "🔔",
+      title: n.title,
+      body: n.body,
+      meta: `${n.kind === "ATTENDANCE" ? "Attendance" : n.kind === "ANNOUNCEMENT" ? "Announcement" : "Notification"} · ${new Date(n.createdAt).toLocaleString()}`,
+      kind: n.kind,
+      read: n.read,
+    })),
+    ...hub.announcements.slice(0,4).filter((x:any) => !serverNotifications.some((n:any) => n.kind === "ANNOUNCEMENT" && n.title === x.title)).map((x:any)=>({id:`a-${x.id}`,icon:"📢",title:x.title,meta:`Announcement · ${new Date(x.createdAt).toLocaleDateString()}`,kind:"announcement"})),
     ...hub.assignments.slice(0,4).map((x:any)=>({id:`as-${x.id}`,icon:"📝",title:x.title,meta:`Assignment · Due ${new Date(x.dueDate).toLocaleDateString()}`,kind:"assignment"})),
     ...hub.exams.slice(0,3).map((x:any)=>({id:`e-${x.id}`,icon:"📅",title:x.title,meta:`${x.subject} · ${new Date(x.date).toLocaleDateString()}`,kind:"exam"}))
-  ], [hub]);
+  ], [hub, serverNotifications]);
 
   return (
     <div>
@@ -375,7 +435,10 @@ export default function PortalPage() {
         {me?.user?.student && data && (
           <div className="card dashboard-hero">
             <div><div className="hint">PERSONALIZED DASHBOARD</div><h2 style={{margin:"4px 0"}}>Good day, {me.user.student.fullName.split(" ")[0]} 👋</h2><div className="sub">{me.user.student.program} · {me.user.student.section} · {me.user.student.semester}</div></div>
-            <NotificationCenter items={notifications} />
+            <NotificationCenter items={notifications} onOpen={() => {
+  fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "read-all" }) })
+    .then(() => setServerNotifications(v => v.map(n => ({ ...n, read: true })))).catch(() => {});
+}} />
           </div>
         )}
 
