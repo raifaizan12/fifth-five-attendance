@@ -1,0 +1,9 @@
+{
+  "name": "5th-5M Student Portal",
+  "short_name": "5th-5M",
+  "start_url": "/portal",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#0b1525",
+  "icons": []
+}
