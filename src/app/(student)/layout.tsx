@@ -1,8 +1,3 @@
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
-
-export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const settings = await prisma.settings.findUnique({ where: { id: 1 } });
-  if (settings?.maintenanceMode) redirect("/maintenance");
+export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return <div>{children}</div>;
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 export default function SettingsPage() {
   const [form, setForm] = useState({
-    className: "", university: "", program: "", semester: "", academicYear: "", attendanceThreshold: 75, portalLogoUrl: "" as string, maintenanceMode: false, maintenanceMessage: "The student portal is temporarily unavailable for scheduled maintenance. Please check back soon.",
+    className: "", university: "", program: "", semester: "", academicYear: "", attendanceThreshold: 75, portalLogoUrl: "" as string,
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch("/api/settings").then((r) => r.json()).then((data) => {
-      setForm({ ...data.settings, portalLogoUrl: data.settings?.portalLogoUrl || "", maintenanceMode: Boolean(data.settings?.maintenanceMode), maintenanceMessage: data.settings?.maintenanceMessage || "" });
+      setForm({ ...data.settings, portalLogoUrl: data.settings?.portalLogoUrl || "" });
       setLoading(false);
     });
   }, []);
@@ -63,17 +63,6 @@ export default function SettingsPage() {
             <input value={form.portalLogoUrl} onChange={(e) => setForm({ ...form, portalLogoUrl: e.target.value })} placeholder="https://example.com/logo.png" />
           </div>
           {form.portalLogoUrl && <button type="button" className="btn btn-danger btn-sm" onClick={() => setForm({ ...form, portalLogoUrl: "" })}>Remove Logo</button>}
-        </div>
-
-        <div className="card">
-          <div className="eyebrow">PORTAL AVAILABILITY</div><h3>Maintenance Mode</h3>
-          <p className="hint">When enabled, students cannot access the portal. CR access remains available.</p>
-          <label style={{display:"flex",alignItems:"center",gap:10,margin:"14px 0"}}>
-            <input type="checkbox" checked={form.maintenanceMode} onChange={(e) => setForm({ ...form, maintenanceMode: e.target.checked })} />
-            Enable student portal maintenance
-          </label>
-          <div className="field"><label>Message shown to students</label><textarea value={form.maintenanceMessage} maxLength={500} onChange={(e) => setForm({ ...form, maintenanceMessage: e.target.value })} rows={3} /></div>
-          <p className="hint">Click Save Settings below to apply this setting.</p>
         </div>
 
         <div className="card">

@@ -12,8 +12,6 @@ const schema = z.object({
   academicYear: z.string().optional(),
   attendanceThreshold: z.number().min(1).max(100).optional(),
   portalLogoUrl: z.string().max(900000).optional().nullable(),
-  maintenanceMode: z.boolean().optional(),
-  maintenanceMessage: z.string().max(500).optional(),
 });
 
 export async function GET() {
