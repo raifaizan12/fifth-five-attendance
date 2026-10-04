@@ -21,6 +21,7 @@ const items = [
   { href: "/portal/schedule", label: "Schedule", icon: "▦" },
   { href: "/portal/notifications", label: "Alerts", icon: "♢" },
   { href: "/portal/requests", label: "Requests", icon: "＋" },
+  { href: "/portal/scan", label: "Scan QR", icon: "⌗" },
 ];
 
 export default function StudentNav({ settings }: { settings: StudentSettings | null }) {
