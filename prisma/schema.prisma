@@ -36,10 +36,10 @@ model User {
   student   Student? @relation(fields: [studentId], references: [id])
   studentId String?  @unique
 
-  auditLogs         AuditLog[]
-  loginSessions     LoginSession[]
+  auditLogs        AuditLog[]
+  loginSessions    LoginSession[]
   pushSubscriptions PushSubscription[]
-  notifications     Notification[]
+  notifications    Notification[]
 
   @@index([role])
 }
@@ -58,12 +58,12 @@ model Student {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user               User?
-  attendanceRecords  AttendanceRecord[]
-  pollVotes          PollVote[]
-  discussionPosts    DiscussionPost[]
-  issues             StudentIssue[]
-  leaveRequests      LeaveRequest[]
+  user              User?
+  attendanceRecords AttendanceRecord[]
+  pollVotes         PollVote[]
+  discussionPosts   DiscussionPost[]
+  issues            StudentIssue[]
+  leaveRequests     LeaveRequest[]
   correctionRequests AttendanceCorrectionRequest[]
 
   @@index([section])
@@ -113,7 +113,7 @@ model AttendanceSession {
 
   createdBy String // User id of CR who created it
 
-  records            AttendanceRecord[]
+  records AttendanceRecord[]
   correctionRequests AttendanceCorrectionRequest[]
 
   // A subject cannot have two sessions on the same date+topic (prevents accidental duplicates)
@@ -291,17 +291,17 @@ model LoginSession {
   @@index([logoutAt, lastActive])
 }
 
+
 model Notification {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   title     String
-  message   String    @db.Text
-  kind      String    @default("GENERAL")
+  message   String   @db.Text
+  kind      String   @default("GENERAL")
   href      String?
   readAt    DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, createdAt])
   @@index([userId, readAt])
 }
@@ -315,7 +315,6 @@ model PushSubscription {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([userId, endpoint])
 }
 
@@ -328,22 +327,20 @@ model LeaveRequest {
   status    String   @default("PENDING")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   @@index([studentId, status])
 }
 
 model AttendanceCorrectionRequest {
-  id              String            @id @default(cuid())
-  studentId       String
-  sessionId       String
+  id        String   @id @default(cuid())
+  studentId String
+  sessionId String
   requestedStatus String
-  reason          String            @db.Text
-  status          String            @default("PENDING")
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  student         Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  session         AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
+  reason    String   @db.Text
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session   AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   @@index([studentId, status])
 }

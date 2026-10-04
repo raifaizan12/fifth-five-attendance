@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -11,36 +11,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [maintenance, setMaintenance] = useState<{maintenanceMode:boolean; maintenanceMessage:string} | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const loadStatus = async () => {
-      try {
-        const response = await fetch("/api/portal-status", { cache: "no-store" });
-        if (!response.ok) throw new Error("Unable to load portal status");
-        const data = await response.json();
-        if (active) setMaintenance({
-          maintenanceMode: Boolean(data.maintenanceMode),
-          maintenanceMessage: data.maintenanceMessage || "",
-        });
-      } catch {
-        if (active) setMaintenance({ maintenanceMode: false, maintenanceMessage: "" });
-      }
-    };
-    loadStatus();
-    const interval = window.setInterval(loadStatus, 10000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, []);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (role === "STUDENT" && maintenance?.maintenanceMode) return;
-
     setLoading(true);
     const res = await signIn("credentials", {
       identifier,
@@ -124,20 +97,6 @@ export default function LoginPage() {
               <p>Sign in to continue to your {isCR ? "class management" : "student"} workspace.</p>
             </div>
 
-            {role === "STUDENT" && maintenance?.maintenanceMode ? (
-              <section className="maintenance-card" role="status" aria-live="polite">
-                <div className="maintenance-icon">🛠️</div>
-                <h2>We’ll Be Back Soon</h2>
-                <p>{maintenance.maintenanceMessage?.trim() || "The student portal is temporarily unavailable. Please check back soon."}</p>
-                <div className="maintenance-divider" />
-                <p className="maintenance-signoff">
-                  Regards,<br /><strong>Roy Faizan</strong><br />
-                  © 2026 All rights reserved.<br />
-                  Developed by <strong>Faizan Technologies</strong>
-                </p>
-              </section>
-            ) : (
-              <>
                 <div className="role-toggle" aria-label="Choose portal">
                   <button type="button" className={role === "STUDENT" ? "active" : ""} onClick={() => { setRole("STUDENT"); setError(""); }}>
                     <span className="role-icon">S</span>
@@ -195,7 +154,7 @@ export default function LoginPage() {
                     </div>
                   )}
 
-                  <button type="submit" className="btn btn-primary btn-block login-submit" disabled={loading || (role === "STUDENT" && Boolean(maintenance?.maintenanceMode))}>
+                  <button type="submit" className="btn btn-primary btn-block login-submit" disabled={loading}>
                     <span>{loading ? "Signing in..." : `Continue as ${isCR ? "Class Rep" : "Student"}`}</span>
                     {!loading && <span className="submit-arrow">→</span>}
                   </button>
@@ -208,9 +167,6 @@ export default function LoginPage() {
                     <p>Students: use the password shared by your CR. Contact your CR if you can’t log in.</p>
                   </div>
                 </div>
-              </>
-            )}
-
             <div className="login-version">
               <span>Portal v1.1.0</span>
               <span>•</span>

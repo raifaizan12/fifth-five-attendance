@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
-import BrandMark from "@/components/BrandMark";
-import PortalLogo from "@/components/PortalLogo";
 import CountUp from "@/components/CountUp";
 import Confetti from "@/components/Confetti";
 import ShareCard from "@/components/ShareCard";
@@ -342,19 +339,6 @@ export default function PortalPage() {
 
   return (
     <div>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <div className="brand-cluster">
-            <PortalLogo size={52} fallback={<BrandMark />} />
-            <div>
-              <h1>{portalSettings.className || "5th-5M"} <span className="topbar-accent">Student Portal</span></h1>
-              <div className="sub">{portalSettings.program || "BS Information Technology"} · {portalSettings.university || "IUB"}</div>
-            </div>
-          </div>
-          <button className="logout-btn" onClick={() => signOut({ callbackUrl: "/login" })}>Log out</button>
-        </div>
-      </div>
-
       <Confetti fire={celebrate} />
 
       <div className="page">
