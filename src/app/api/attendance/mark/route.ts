@@ -3,7 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
 import { logAudit } from "@/lib/audit";
-import { createStudentNotifications } from "@/lib/notifications";
 
 const schema = z.object({
   subjectId: z.string(),
@@ -61,14 +60,6 @@ export async function POST(req: NextRequest) {
       })
     )
   );
-
-  const subject = await prisma.subject.findUnique({ where: { id: subjectId }, select: { name: true } });
-  await createStudentNotifications({
-    studentIds: records.map((r) => r.studentId),
-    title: "Attendance Updated",
-    body: `${subject?.name || "Class"} attendance for ${date} has been uploaded/updated.`,
-    kind: "ATTENDANCE",
-  });
 
   await logAudit({
     userId: authSession!.user.id,

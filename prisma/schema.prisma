@@ -36,9 +36,8 @@ model User {
   student   Student? @relation(fields: [studentId], references: [id])
   studentId String?  @unique
 
-  auditLogs         AuditLog[]
-  pushSubscriptions PushSubscription[]
-  loginSessions     LoginSession[]
+  auditLogs     AuditLog[]
+  loginSessions LoginSession[]
 
   @@index([role])
 }
@@ -62,7 +61,6 @@ model Student {
   pollVotes         PollVote[]
   discussionPosts   DiscussionPost[]
   issues            StudentIssue[]
-  notifications     Notification[]
 
   @@index([section])
   @@index([semester])
@@ -191,20 +189,6 @@ model Announcement {
   updatedAt DateTime @updatedAt
 }
 
-model Notification {
-  id        String   @id @default(cuid())
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-  title     String
-  body      String   @db.Text
-  kind      String   @default("GENERAL")
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([studentId, createdAt])
-  @@index([studentId, read])
-}
-
 model Assignment {
   id          String   @id @default(cuid())
   title       String
@@ -300,18 +284,4 @@ model LoginSession {
 
   @@index([userId, loginAt])
   @@index([logoutAt, lastActive])
-}
-
-model PushSubscription {
-  id        String   @id @default(cuid())
-  endpoint  String   @unique @db.Text
-  p256dh    String   @db.Text
-  auth      String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  @@index([userId])
 }
