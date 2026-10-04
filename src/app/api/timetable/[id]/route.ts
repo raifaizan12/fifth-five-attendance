@@ -14,7 +14,12 @@ const schema = z.object({
   subjectId: z.string().min(1).optional(),
   teacherId: z.string().nullable().optional(),
   room: z.string().nullable().optional(),
-  section: z.string().optional(),
+  section: z.string().min(1).optional(),
+  activeFrom: z.string().nullable().optional(),
+  activeUntil: z.string().nullable().optional(),
+  locationLat: z.number().min(-90).max(90).nullable().optional(),
+  locationLng: z.number().min(-180).max(180).nullable().optional(),
+  geofenceRadius: z.number().int().min(20).max(1000).optional(),
 });
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -36,9 +41,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: "End time must be after start time" }, { status: 400 });
   }
 
+  const updateData = {
+    ...parsed.data,
+    activeFrom: parsed.data.activeFrom === undefined ? undefined : (parsed.data.activeFrom ? new Date(parsed.data.activeFrom) : null),
+    activeUntil: parsed.data.activeUntil === undefined ? undefined : (parsed.data.activeUntil ? new Date(parsed.data.activeUntil) : null),
+  };
+
   const entry = await prisma.timetableEntry.update({
     where: { id: params.id },
-    data: parsed.data as any,
+    data: updateData as any,
     include: { subject: true, teacher: true },
   });
 

@@ -16,7 +16,12 @@ const schema = z
     subjectId: z.string().min(1, "Subject is required"),
     teacherId: z.string().optional(),
     room: z.string().optional(),
-    section: z.string().optional(),
+    section: z.string().min(1).optional(),
+    activeFrom: z.string().optional().nullable(),
+    activeUntil: z.string().optional().nullable(),
+    locationLat: z.number().min(-90).max(90).optional().nullable(),
+    locationLng: z.number().min(-180).max(180).optional().nullable(),
+    geofenceRadius: z.number().int().min(20).max(1000).optional(),
   })
   .refine((d) => d.endTime > d.startTime, {
     message: "End time must be after start time",
@@ -24,13 +29,19 @@ const schema = z
   });
 
 // Any logged-in user (CR or Student) can view the timetable.
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { error } = await requireAnyUser();
   if (error) return error;
 
   const entries = await prisma.timetableEntry.findMany({
     include: { subject: true, teacher: true },
   });
+
+  const activeOnly = new URL(req.url).searchParams.get("activeOnly") === "true";
+  if (activeOnly) {
+    const now = new Date();
+    entries.splice(0, entries.length, ...entries.filter((entry) => (!entry.activeFrom || entry.activeFrom <= now) && (!entry.activeUntil || entry.activeUntil >= now)));
+  }
 
   // Sort by weekday order, then by start time — Prisma can't order by a
   // custom string->weekday mapping directly, so we sort in JS instead.
@@ -64,6 +75,11 @@ export async function POST(req: NextRequest) {
       teacherId: data.teacherId || undefined,
       room: data.room || undefined,
       section: data.section || undefined,
+      activeFrom: data.activeFrom ? new Date(data.activeFrom) : undefined,
+      activeUntil: data.activeUntil ? new Date(data.activeUntil) : undefined,
+      locationLat: data.locationLat ?? undefined,
+      locationLng: data.locationLng ?? undefined,
+      geofenceRadius: data.geofenceRadius ?? 100,
     },
     include: { subject: true, teacher: true },
   });

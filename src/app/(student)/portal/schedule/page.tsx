@@ -26,7 +26,7 @@ export default function StudentTimetablePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/timetable")
+    fetch("/api/timetable?activeOnly=true")
       .then(async (r) => {
         if (!r.ok) {
           const body = await r.json().catch(() => ({}));

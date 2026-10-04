@@ -12,12 +12,17 @@ type Entry = {
   endTime: string;
   room?: string | null;
   section: string;
+  activeFrom?: string | null;
+  activeUntil?: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  geofenceRadius?: number;
   subject: { id: string; name: string };
   teacher?: { id: string; fullName: string } | null;
 };
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const emptyForm = { day: "Monday", startTime: "09:00", endTime: "10:00", subjectId: "", teacherId: "", room: "" };
+const emptyForm = { day: "Monday", startTime: "09:00", endTime: "10:00", subjectId: "", teacherId: "", room: "", section: "Fifth Five", activeFrom: "", activeUntil: "", locationLat: "", locationLng: "", geofenceRadius: "100" };
 
 function formatTime(value: string) {
   const [h, m] = value.split(":").map(Number);
@@ -66,7 +71,8 @@ export default function TimetablePage() {
     setMessage("");
     setSaving(true);
     const url = editingId ? `/api/timetable/${editingId}` : "/api/timetable";
-    const res = await fetch(url, { method: editingId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const payload = { ...form, locationLat: form.locationLat === "" ? null : Number(form.locationLat), locationLng: form.locationLng === "" ? null : Number(form.locationLng), geofenceRadius: Number(form.geofenceRadius || 100), activeFrom: form.activeFrom || null, activeUntil: form.activeUntil || null };
+    const res = await fetch(url, { method: editingId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
     if (!res.ok) {
@@ -81,7 +87,7 @@ export default function TimetablePage() {
 
   function startEdit(entry: Entry) {
     setEditingId(entry.id);
-    setForm({ day: entry.day, startTime: entry.startTime, endTime: entry.endTime, subjectId: entry.subject.id, teacherId: entry.teacher?.id || "", room: entry.room || "" });
+    setForm({ day: entry.day, startTime: entry.startTime, endTime: entry.endTime, subjectId: entry.subject.id, teacherId: entry.teacher?.id || "", room: entry.room || "", section: entry.section || "Fifth Five", activeFrom: entry.activeFrom ? entry.activeFrom.slice(0,10) : "", activeUntil: entry.activeUntil ? entry.activeUntil.slice(0,10) : "", locationLat: entry.locationLat == null ? "" : String(entry.locationLat), locationLng: entry.locationLng == null ? "" : String(entry.locationLng), geofenceRadius: String(entry.geofenceRadius || 100) });
     setError("");
     setMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -136,6 +142,7 @@ export default function TimetablePage() {
           <div className="tt-section-title"><div><div className="eyebrow">SCHEDULE BUILDER</div><h3>{editingId ? "Edit class" : "Add a class"}</h3></div><span className="tt-mini-badge">CR ONLY</span></div>
           <form onSubmit={handleSubmit}>
             <div className="form-two">
+              <div className="field"><label>Class / Section</label><input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} placeholder="BSIT-5TH-5M" required /></div>
               <div className="field"><label>Day</label><select value={form.day} onChange={(e) => setForm({ ...form, day: e.target.value })}>{DAYS.map((d) => <option key={d}>{d}</option>)}</select></div>
               <div className="field"><label>Room / Venue</label><input value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} placeholder="Room 204" /></div>
             </div>
@@ -145,6 +152,8 @@ export default function TimetablePage() {
             </div>
             <div className="field"><label>Subject</label><select value={form.subjectId} onChange={(e) => onSubjectChange(e.target.value)} required><option value="">Select subject</option>{subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
             <div className="field"><label>Teacher</label><select value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })}><option value="">No teacher assigned</option>{teachers.map((t) => <option key={t.id} value={t.id}>{t.fullName}</option>)}</select></div>
+            <div className="tt-subsection"><div className="eyebrow">SCHEDULE VALIDITY</div><p className="hint">Use dates when your timetable changes by semester, month, or session.</p><div className="form-two"><div className="field"><label>Effective from</label><input type="date" value={form.activeFrom} onChange={(e) => setForm({ ...form, activeFrom: e.target.value })} /></div><div className="field"><label>Effective until</label><input type="date" value={form.activeUntil} onChange={(e) => setForm({ ...form, activeUntil: e.target.value })} /></div></div></div>
+            <div className="tt-subsection"><div className="eyebrow">CLASSROOM LOCATION</div><p className="hint">Optional now; these coordinates can power automatic classroom attendance later.</p><div className="form-two"><div className="field"><label>Latitude</label><input type="number" step="any" value={form.locationLat} onChange={(e) => setForm({ ...form, locationLat: e.target.value })} placeholder="29.3956" /></div><div className="field"><label>Longitude</label><input type="number" step="any" value={form.locationLng} onChange={(e) => setForm({ ...form, locationLng: e.target.value })} placeholder="71.6836" /></div></div><div className="field"><label>Allowed radius (meters)</label><input type="number" min="20" max="1000" value={form.geofenceRadius} onChange={(e) => setForm({ ...form, geofenceRadius: e.target.value })} /></div></div>
             {error && <div className="error-text tt-message">{error}</div>}
             {message && <div className="success-text tt-message">✓ {message}</div>}
             <div className="tt-actions"><button className="btn btn-primary" disabled={saving}>{saving ? "Saving..." : editingId ? "Save Changes" : "Add to Timetable"}</button>{editingId && <button type="button" className="btn btn-secondary" onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancel</button>}</div>

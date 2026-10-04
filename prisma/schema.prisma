@@ -170,14 +170,19 @@ model Settings {
 }
 
 model TimetableEntry {
-  id        String   @id @default(cuid())
-  day       String // "Monday" .. "Sunday"
-  startTime String // 24-hour "HH:MM", e.g. "09:00"
-  endTime   String // 24-hour "HH:MM", e.g. "10:30"
-  room      String?
-  section   String   @default("Fifth Five")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  day            String // "Monday" .. "Sunday"
+  startTime      String // 24-hour "HH:MM", e.g. "09:00"
+  endTime        String // 24-hour "HH:MM", e.g. "10:30"
+  room           String?
+  section        String    @default("Fifth Five")
+  activeFrom     DateTime?
+  activeUntil    DateTime?
+  locationLat    Float?
+  locationLng    Float?
+  geofenceRadius Int       @default(100)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId String
