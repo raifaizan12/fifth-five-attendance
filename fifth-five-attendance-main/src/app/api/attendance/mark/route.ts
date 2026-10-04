@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Upsert each record — this both prevents duplicate attendance rows for the same
+  // Upsert each record â€” this both prevents duplicate attendance rows for the same
   // student+session, and transparently supports "editing" attendance later.
   const results = await prisma.$transaction(
     records.map((r) =>
@@ -68,7 +68,12 @@ export async function POST(req: NextRequest) {
     include: { user: { select: { id: true } } },
   });
   const statusByStudent = new Map(records.map((r) => [r.studentId, r.status]));
-  await createStudentNotifications({`r`n    studentIds: students.map((s) => s.id),`r`n    title: "Attendance Updated",`r`n    body: `${subject?.name || "Class"} attendance for ${date} has been uploaded/updated.`,`r`n    kind: "ATTENDANCE",`r`n    icon: "??",`r`n  });
+  await createStudentNotifications({
+    studentIds: students.map((s) => s.id),
+    title: "Attendance Updated",
+    body: `Attendance for ${date} has been uploaded/updated.`,
+    kind: "ATTENDANCE",
+  });
 
   await logAudit({
     userId: authSession!.user.id,
@@ -80,4 +85,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ sessionId: attendanceSession.id, count: results.length, notified: students.length });
 }
+
+
 

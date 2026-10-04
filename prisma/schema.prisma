@@ -299,3 +299,17 @@ model LoginSession {
   @@index([userId, loginAt])
   @@index([logoutAt, lastActive])
 }
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique @db.Text
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@index([userId])
+}

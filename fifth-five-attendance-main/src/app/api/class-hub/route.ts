@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireAnyUser, requireStudent } from "@/lib/apiAuth";
 import { createStudentNotifications } from "@/lib/notifications";
@@ -54,11 +54,10 @@ export async function POST(req: NextRequest) {
   if (type === "announcements" && item) {
     const students = await prisma.student.findMany({ where: { isActive: true }, include: { user: { select: { id: true } } } });
     await createStudentNotifications({
-      students,
-      title: `🚫 ${String(b.title || "New Notification")}`,
-      icon: "🚫",
+      studentIds: students.flatMap((s) => s.user?.id ? [s.user.id] : []),
+      title: `New Notification: ${String(b.title || "New Notification")}`,
+      body: String(b.body || "You have a new class notification."),
       kind: "ANNOUNCEMENT",
-      bodyForStudent: () => String(b.body || "You have a new class notification."),
     });
   }
   return NextResponse.json({ item }, { status: 201 });
@@ -102,4 +101,7 @@ export async function PUT(req: NextRequest) {
   const vote = await prisma.pollVote.upsert({ where: { pollId_studentId: { pollId: id, studentId } }, update: { option: String(b.option) }, create: { pollId: id, studentId, option: String(b.option) } });
   return NextResponse.json({ vote });
 }
+
+
+
 
