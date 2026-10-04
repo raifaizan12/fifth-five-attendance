@@ -11,170 +11,80 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const isCR = role === "ADMIN";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await signIn("credentials", {
-      identifier,
-      password,
-      redirect: false,
-    });
+    const res = await signIn("credentials", { identifier, password, redirect: false });
     setLoading(false);
-
     if (res?.error) {
       setError(res.error === "CredentialsSignin" ? "Invalid credentials. Please check and try again." : res.error);
       return;
     }
-
-    router.push(role === "ADMIN" ? "/dashboard" : "/portal");
+    router.push(isCR ? "/dashboard" : "/portal");
     router.refresh();
   }
 
-  const isCR = role === "ADMIN";
-
   return (
-    <main className="login-wrap">
-      <div className={`login-shell ${isCR ? "login-shell-cr" : "login-shell-student"}`}>
-        <section className="login-showcase" aria-hidden="true">
-          <div className="showcase-grid" />
-          <div className="showcase-orb showcase-orb-one" />
-          <div className="showcase-orb showcase-orb-two" />
+    <main className={`auth-page ${isCR ? "auth-cr" : "auth-student"}`}>
+      <div className="auth-noise" />
+      <section className="auth-layout">
+        <aside className="auth-visual">
+          <div className="auth-visual-top">
+            <div className="auth-logo"><span>5</span></div>
+            <div><b>FIFTH FIVE</b><small>ATTENDANCE PLATFORM</small></div>
+          </div>
 
-          <div className="showcase-content">
-            <div className="login-brand">
-              <span className="login-brand-mark">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12.5 9.2 17 19 6.5" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-              <div>
-                <strong>5M Attendance</strong>
-                <span>IUB · BS Information Technology</span>
+          <div className="auth-visual-main">
+            <div className="auth-status"><i /> {isCR ? "CLASS REPRESENTATIVE WORKSPACE" : "STUDENT ACADEMIC HUB"}</div>
+            <h2>{isCR ? "Take control of your class." : "Everything for your day, beautifully organized."}</h2>
+            <p>{isCR ? "Attendance, timetable, students, QR sessions and class operations — one focused workspace." : "See attendance, your next class, alerts, requests and academic progress without the clutter."}</p>
+
+            <div className="auth-preview">
+              <div className="preview-head"><span>Today</span><strong>{isCR ? "Class command center" : "Your academic pulse"}</strong></div>
+              <div className="preview-grid">
+                <div><small>{isCR ? "PRESENT" : "ATTENDANCE"}</small><b>{isCR ? "42 / 48" : "86%"}</b><em>{isCR ? "students today" : "healthy range"}</em></div>
+                <div><small>{isCR ? "NEXT ACTION" : "NEXT CLASS"}</small><b>{isCR ? "QR Session" : "Database"}</b><em>{isCR ? "ready to start" : "10:00 AM · Lab 2"}</em></div>
               </div>
-            </div>
-
-            <div className="showcase-copy">
-              <span className="showcase-kicker">{isCR ? "CLASS REPRESENTATIVE" : "STUDENT PORTAL"}</span>
-              <h2>{isCR ? "Run your class with clarity." : "Your academic day, in one place."}</h2>
-              <p>
-                {isCR
-                  ? "A focused workspace for attendance, students, schedules, reports and class coordination."
-                  : "Track attendance, classes, assignments, exams and your academic progress from one calm workspace."}
-              </p>
-            </div>
-
-            <div className="showcase-points">
-              <div><span>01</span><b>Secure access</b><small>Role-based portal entry</small></div>
-              <div><span>02</span><b>Live information</b><small>Attendance & timetable at a glance</small></div>
-              <div><span>03</span><b>Built for 5M</b><small>Designed around your class workflow</small></div>
-            </div>
-
-            <div className="showcase-footer">
-              <span>THE ISLAMIA UNIVERSITY OF BAHAWALPUR</span>
-              <span>2026 · 5M(2024–28)</span>
+              <div className="preview-bar"><i /></div>
             </div>
           </div>
-        </section>
 
-        <section className="login-panel">
-          <div className="login-panel-inner">
-            <div className="mobile-brand login-brand">
-              <span className="login-brand-mark">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12.5 9.2 17 19 6.5" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-              <div>
-                <strong>5M Attendance</strong>
-                <span>IUB · BS Information Technology</span>
-              </div>
+          <div className="auth-visual-footer"><span>IUB · BS INFORMATION TECHNOLOGY</span><span>5M · 2024–28</span></div>
+        </aside>
+
+        <section className="auth-card-wrap">
+          <div className="auth-card">
+            <div className="auth-mobile-brand"><div className="auth-logo"><span>5</span></div><div><b>FIFTH FIVE</b><small>ATTENDANCE</small></div></div>
+            <div className="auth-heading">
+              <span className="auth-eyebrow">{isCR ? "CR PORTAL" : "STUDENT PORTAL"}</span>
+              <h1>Welcome back<span>.</span></h1>
+              <p>Sign in to continue to your {isCR ? "class management workspace" : "student workspace"}.</p>
             </div>
 
-            <div className="login-heading">
-              <span className="eyebrow">{isCR ? "CR PORTAL" : "STUDENT PORTAL"}</span>
-              <h1>Welcome back</h1>
-              <p>Sign in to continue to your {isCR ? "class management" : "student"} workspace.</p>
+            <div className="auth-role-switch" role="tablist">
+              <button type="button" className={!isCR ? "active" : ""} onClick={() => { setRole("STUDENT"); setError(""); }}>
+                <span className="role-badge">ST</span><span><b>Student</b><small>Personal portal</small></span><i>→</i>
+              </button>
+              <button type="button" className={isCR ? "active" : ""} onClick={() => { setRole("ADMIN"); setError(""); }}>
+                <span className="role-badge">CR</span><span><b>Class Rep</b><small>Management portal</small></span><i>→</i>
+              </button>
             </div>
 
-                <div className="role-toggle" aria-label="Choose portal">
-                  <button type="button" className={role === "STUDENT" ? "active" : ""} onClick={() => { setRole("STUDENT"); setError(""); }}>
-                    <span className="role-icon">S</span>
-                    <span><b>Student</b><small>Personal portal</small></span>
-                  </button>
-                  <button type="button" className={role === "ADMIN" ? "active" : ""} onClick={() => { setRole("ADMIN"); setError(""); }}>
-                    <span className="role-icon">CR</span>
-                    <span><b>Class Rep</b><small>Management portal</small></span>
-                  </button>
-                </div>
+            <form onSubmit={handleSubmit} className="auth-form">
+              <label>{isCR ? "CR email" : "Registration number"}<div className="auth-input"><span>{isCR ? "@" : "#"}</span><input value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder={isCR ? "cr@fifthfive.iub.edu.pk" : "BSIT-F21-045"} required autoCapitalize="none" autoComplete={isCR ? "email" : "username"} /></div></label>
+              <label>Password<div className="auth-input"><span>••</span><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required autoComplete="current-password" /></div></label>
+              {error && <div className="auth-error"><b>!</b>{error}</div>}
+              <button className="auth-submit" type="submit" disabled={loading}><span>{loading ? "Signing in…" : `Continue as ${isCR ? "Class Rep" : "Student"}`}</span><b>↗</b></button>
+            </form>
 
-                <form onSubmit={handleSubmit} className="login-form">
-                  <div className="field">
-                    <label>{isCR ? "CR Email" : "Registration Number"}</label>
-                    <div className="input-shell">
-                      <span className="input-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d={isCR ? "M4 6h16v12H4zM4 7l8 6 8-6" : "M6 4h12v16H6zM9 8h6M9 12h6M9 16h3"} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </span>
-                      <input
-                        value={identifier}
-                        onChange={(e) => setIdentifier(e.target.value)}
-                        placeholder={isCR ? "cr@fifthfive.iub.edu.pk" : "e.g. BSIT-F21-045"}
-                        required
-                        autoCapitalize="none"
-                        autoComplete={isCR ? "email" : "username"}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="field">
-                    <label>Password</label>
-                    <div className="input-shell">
-                      <span className="input-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.7"/>
-                          <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
-                        </svg>
-                      </span>
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        autoComplete="current-password"
-                        placeholder="Enter your password"
-                      />
-                    </div>
-                  </div>
-
-                  {error && (
-                    <div className="login-error" role="alert">
-                      <span>!</span>{error}
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn btn-primary btn-block login-submit" disabled={loading}>
-                    <span>{loading ? "Signing in..." : `Continue as ${isCR ? "Class Rep" : "Student"}`}</span>
-                    {!loading && <span className="submit-arrow">→</span>}
-                  </button>
-                </form>
-
-                <div className="login-note">
-                  <span className="secure-dot" />
-                  <div>
-                    <strong>Private & secure access</strong>
-                    <p>Students: use the password shared by your CR. Contact your CR if you can’t log in.</p>
-                  </div>
-                </div>
-            <div className="login-version">
-              <span>Portal v1.1.0</span>
-              <span>•</span>
-              <span>5M(2024–28)</span>
-            </div>
+            <div className="auth-security"><span>✓</span><div><b>Secure & private</b><p>Your account and attendance data are protected by role-based access.</p></div></div>
+            <div className="auth-foot"><span>Fifth Five Attendance</span><span>v1.1</span></div>
           </div>
         </section>
-      </div>
+      </section>
     </main>
   );
 }

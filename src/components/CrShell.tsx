@@ -24,54 +24,19 @@ const ICONS: Record<string, React.ReactNode> = {
 };
 
 const TABS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/attendance", label: "Mark Attendance" },
-  { href: "/students", label: "Students" },
-  { href: "/subjects", label: "Subjects" },
-  { href: "/timetable", label: "Timetable" },
-  { href: "/hub", label: "Class Hub" },
-  { href: "/feedback", label: "Student Feedback" },
-  { href: "/photos", label: "Photo Slider" },
-  { href: "/analytics", label: "Analytics" },
-  { href: "/requests", label: "Requests" },
-  { href: "/qr", label: "QR Attendance" },
-  { href: "/reports", label: "Reports" },
-  { href: "/audit", label: "Audit Log" },
-  { href: "/backup", label: "Backup" },
-  { href: "/settings", label: "Settings" },
-];
+  ["/dashboard", "Dashboard"], ["/attendance", "Attendance"], ["/students", "Students"], ["/subjects", "Subjects"], ["/timetable", "Timetable"], ["/hub", "Class Hub"], ["/feedback", "Feedback"], ["/photos", "Photos"], ["/analytics", "Analytics"], ["/requests", "Requests"], ["/qr", "QR Attendance"], ["/reports", "Reports"], ["/audit", "Audit Log"], ["/backup", "Backup"], ["/settings", "Settings"],
+] as const;
 
 export default function CrShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  return (
-    <div>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <div className="brand-cluster">
-            <PortalLogo size={44} />
-            <div>
-              <h1>5th-5M <span className="topbar-accent">CR Portal</span></h1>
-              <div className="sub">Attendance · Class Hub · Timetable · Student Management</div>
-            </div>
-          </div>
-          <div className="topbar-actions">
-            <span className="live-pill"><i /> Live Portal</span>
-            <button className="logout-btn" onClick={() => signOut({ callbackUrl: "/login" })}>Log out</button>
-          </div>
-        </div>
-      </div>
-      <div className="nav-tabs">
-        {TABS.map((t) => (
-          <Link key={t.href} href={t.href} className={`nav-tab ${pathname?.startsWith(t.href) ? "active" : ""}`}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              {ICONS[t.href]}
-            </svg>
-            {t.label}
-          </Link>
-        ))}
-      </div>
-      <div className="page">{children}</div>
-    </div>
-  );
+  return <div className="cr-app">
+    <header className="cr-mobile-top"><PortalLogo size={38} /><div><b>FIFTH FIVE</b><small>CR PORTAL</small></div><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></header>
+    <aside className="cr-sidebar">
+      <div className="cr-sidebar-brand"><PortalLogo size={42}/><div><b>FIFTH FIVE</b><span>CR PORTAL</span></div></div>
+      <div className="cr-side-label">CLASS MANAGEMENT</div>
+      <nav>{TABS.map(([href,label]) => <Link key={href} href={href} className={pathname?.startsWith(href) ? "active" : ""}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ICONS[href]}</svg><span>{label}</span></Link>)}</nav>
+      <div className="cr-sidebar-bottom"><div className="cr-live"><i/> System online</div><button onClick={() => signOut({ callbackUrl: "/login" })}>↪ <span>Sign out</span></button></div>
+    </aside>
+    <main className="cr-main"><div className="cr-mainbar"><div><span>CLASS REPRESENTATIVE</span><b>Fifth Five · Management</b></div><div className="cr-main-actions"><span className="cr-live-pill"><i/> Live</span><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></div></div><div className="page">{children}</div></main>
+  </div>;
 }
-
