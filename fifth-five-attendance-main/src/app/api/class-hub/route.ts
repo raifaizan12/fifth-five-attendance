@@ -102,3 +102,4 @@ export async function PUT(req: NextRequest) {
   const vote = await prisma.pollVote.upsert({ where: { pollId_studentId: { pollId: id, studentId } }, update: { option: String(b.option) }, create: { pollId: id, studentId, option: String(b.option) } });
   return NextResponse.json({ vote });
 }
+
