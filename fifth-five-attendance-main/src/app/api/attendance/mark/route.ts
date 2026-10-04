@@ -68,17 +68,7 @@ export async function POST(req: NextRequest) {
     include: { user: { select: { id: true } } },
   });
   const statusByStudent = new Map(records.map((r) => [r.studentId, r.status]));
-  await createStudentNotifications({
-    students,
-    title: "Attendance Updated",
-    icon: "📋",
-    kind: "ATTENDANCE",
-    bodyForStudent: (student) => {
-      const status = statusByStudent.get(student.id) || "UPDATED";
-      const label = status === "ABSENT" ? "🚫 Absent" : status === "PRESENT" ? "✅ Present" : status === "LATE" ? "⏰ Late" : "📝 Leave";
-      return `${subject?.name || "Attendance"}: ${label} · ${topicValue} · ${date}`;
-    },
-  });
+  await createStudentNotifications({`r`n    studentIds: students.map((s) => s.id),`r`n    title: "Attendance Updated",`r`n    body: `${subject?.name || "Class"} attendance for ${date} has been uploaded/updated.`,`r`n    kind: "ATTENDANCE",`r`n    icon: "??",`r`n  });
 
   await logAudit({
     userId: authSession!.user.id,
@@ -90,3 +80,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ sessionId: attendanceSession.id, count: results.length, notified: students.length });
 }
+
