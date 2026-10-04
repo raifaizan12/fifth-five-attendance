@@ -43,3 +43,22 @@ IMPORTANT:
   npm run build
 - Then commit and push to GitHub.
 >>>>>>> b7263f67241bb78cee25dac2c3d9370c7a49ee26
+
+PROFESSIONAL 2.0 UPGRADE
+- Attendance intelligence dashboard for students and CRs
+- Student notification center with database-backed alerts
+- Web Push subscription endpoint and service worker
+- Attendance marking now creates student notifications
+- Student leave requests and attendance correction requests
+- CR request approval/rejection queue
+- CR analytics/risk command center
+- QR attendance session link workspace
+- Responsive premium navigation and mobile-first layouts
+- Student analytics, subject risk meters and attendance guidance
+- Next.js viewport themeColor configuration
+
+Required Vercel environment variables for Web Push:
+VAPID_SUBJECT
+VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY
+NEXT_PUBLIC_VAPID_PUBLIC_KEY

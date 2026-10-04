@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
 import { logAudit } from "@/lib/audit";
+import { notifyUsers } from "@/lib/notifications";
 
 const schema = z.object({
   subjectId: z.string(),
@@ -60,6 +61,9 @@ export async function POST(req: NextRequest) {
       })
     )
   );
+
+  const students = await prisma.student.findMany({ where: { isActive: true }, include: { user: true } });
+  await notifyUsers(students.map(s => s.user?.id).filter(Boolean) as string[], { title: "Attendance updated", message: `Attendance was marked for ${topicValue}. Open Attendance to review your status.`, kind: "ATTENDANCE", href: "/portal" });
 
   await logAudit({
     userId: authSession!.user.id,
