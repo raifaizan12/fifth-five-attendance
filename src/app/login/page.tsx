@@ -39,11 +39,11 @@ export default function LoginPage() {
 
           <div className="auth-visual-main">
             <div className="auth-status"><i /> {isCR ? "CLASS REPRESENTATIVE WORKSPACE" : "STUDENT ACADEMIC HUB"}</div>
-            <h2>{isCR ? "Take control of your class." : "Everything for your day, beautifully organized."}</h2>
-            <p>{isCR ? "Attendance, timetable, students, QR sessions and class operations — one focused workspace." : "See attendance, your next class, alerts, requests and academic progress without the clutter."}</p>
+            <h2>{isCR ? "Run your class with confidence." : "Your academic day, beautifully organized."}</h2>
+            <p>{isCR ? "Attendance, schedules, students, QR sessions and class operations — one focused command center." : "Track attendance, classes, alerts, requests and academic progress from one calm workspace."}</p>
 
             <div className="auth-preview">
-              <div className="preview-head"><span>Today</span><strong>{isCR ? "Class command center" : "Your academic pulse"}</strong></div>
+              <div className="preview-head"><span>Today</span><strong>{isCR ? "CLASS COMMAND CENTER" : "ACADEMIC PULSE"}</strong></div>
               <div className="preview-grid">
                 <div><small>{isCR ? "PRESENT" : "ATTENDANCE"}</small><b>{isCR ? "42 / 48" : "86%"}</b><em>{isCR ? "students today" : "healthy range"}</em></div>
                 <div><small>{isCR ? "NEXT ACTION" : "NEXT CLASS"}</small><b>{isCR ? "QR Session" : "Database"}</b><em>{isCR ? "ready to start" : "10:00 AM · Lab 2"}</em></div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
               <button className="auth-submit" type="submit" disabled={loading}><span>{loading ? "Signing in…" : `Continue as ${isCR ? "Class Rep" : "Student"}`}</span><b>↗</b></button>
             </form>
 
-            <div className="auth-security"><span>✓</span><div><b>Secure & private</b><p>Your account and attendance data are protected by role-based access.</p></div></div>
+            <div className="auth-security"><span>✓</span><div><b>Protected workspace</b><p>Your credentials and attendance data stay protected with role-based access.</p></div></div>
             <div className="auth-foot"><span>Fifth Five Attendance</span><span>v1.1</span></div>
           </div>
         </section>
