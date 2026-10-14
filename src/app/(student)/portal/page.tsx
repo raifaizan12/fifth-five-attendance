@@ -190,13 +190,6 @@ function AssignmentTracker({ assignments }: { assignments: HubItem[] }) {
   return <div className="card"><div className="section-head"><div><h3>📝 Assignment Tracker</h3><div className="hint">Pending and overdue work at a glance</div></div><span className="chip chip-flat">{sorted.length} items</span></div>{sorted.length===0 ? <div className="empty-state">No assignments yet.</div> : sorted.map((a:any)=>{const overdue=new Date(a.dueDate).getTime()<now; return <div className="tracker-row" key={a.id}><div><strong>{a.title}</strong><div className="hint">{a.subject || "Class"} · Due {new Date(a.dueDate).toLocaleString()}</div></div><span className={`chip ${overdue?"chip-down":"chip-up"}`}>{overdue?"Overdue":"Pending"}</span></div>})}</div>;
 }
 
-function ExamCountdown({ exams }: { exams: HubItem[] }) {
-  const upcoming = [...exams].filter((e:any)=>new Date(e.date).getTime() >= Date.now()-86400000).sort((a:any,b:any)=>new Date(a.date).getTime()-new Date(b.date).getTime())[0];
-  if (!upcoming) return <div className="card"><h3>🗓️ Exam Countdown</h3><div className="empty-state">No upcoming exams added yet.</div></div>;
-  const diff = Math.max(0, new Date(upcoming.date).getTime()-Date.now());
-  return <div className="card"><div className="section-head"><div><div className="hint">UPCOMING {upcoming.kind || "EXAM"}</div><h3 style={{margin:"4px 0"}}>{upcoming.title}</h3><div className="sub">{upcoming.subject} · {new Date(upcoming.date).toLocaleDateString()}{upcoming.startTime ? ` · ${upcoming.startTime}` : ""}{upcoming.room ? ` · Room ${upcoming.room}` : ""}</div></div><div className="next-countdown">{formatCountdown(diff)}</div></div></div>;
-}
-
 function AttendanceCalculator({ data, threshold }: { data: HistoryData; threshold: number }) {
   const [target, setTarget] = useState(threshold);
   const [future, setFuture] = useState(0);
@@ -214,12 +207,17 @@ function NotificationCenter({ items }: { items: NotificationItem[] }) {
 }
 
 function DiscussionAndIssues() {
-  const [posts,setPosts]=useState<DiscussionPost[]>([]); const [issues,setIssues]=useState<Issue[]>([]); const [message,setMessage]=useState(""); const [issue,setIssue]=useState(""); const [category,setCategory]=useState("Attendance"); const [msg,setMsg]=useState("");
-  const load=()=>fetch("/api/student-tools").then(r=>r.ok?r.json():null).then(d=>{if(d){setPosts(d.posts||[]);setIssues(d.issues||[]);}}).catch(()=>{});
-  useEffect(()=>{load();},[]);
-  async function post(){if(!message.trim())return; const r=await fetch("/api/student-tools",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"discussion",message})}); if(r.ok){setMessage("");load();} else setMsg("Could not post message.");}
-  async function report(){if(!issue.trim())return; const r=await fetch("/api/student-tools",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"issue",category,message:issue})}); if(r.ok){setIssue("");setMsg("Issue reported successfully.");load();} else setMsg("Could not submit issue.");}
-  return <div className="feature-grid"><div className="card"><div className="section-head"><div><h3>💬 Class Discussion</h3><div className="hint">Ask questions and share useful class information.</div></div></div><div className="inline-form"><input value={message} onChange={e=>setMessage(e.target.value)} placeholder="Ask your class something..." /><button className="btn btn-primary btn-sm" onClick={post}>Post</button></div><div className="discussion-list">{posts.slice(0,6).map(p=><div className="discussion-item" key={p.id}><strong>{p.student.fullName}</strong><span className="hint"> · {new Date(p.createdAt).toLocaleString()}</span><div>{p.message}</div></div>)}{posts.length===0&&<div className="empty-state">No discussion posts yet.</div>}</div></div><div className="card"><h3>🆘 Report an Issue</h3><div className="hint">Report attendance, timetable, assignment or portal problems to the CR.</div><select value={category} onChange={e=>setCategory(e.target.value)} style={{marginTop:10}}><option>Attendance</option><option>Timetable</option><option>Assignment</option><option>Technical</option><option>Other</option></select><textarea value={issue} onChange={e=>setIssue(e.target.value)} placeholder="Describe the issue..." rows={4} style={{width:"100%",marginTop:8}} /><button className="btn btn-secondary btn-sm" onClick={report}>Submit Report</button>{msg&&<div className="success-text">{msg}</div>}<div className="issue-list">{issues.slice(0,4).map(i=><div className="tracker-row" key={i.id}><div><strong>{i.category}</strong><div className="hint">{new Date(i.createdAt).toLocaleDateString()} · {i.message}</div></div><span className="chip chip-flat">{i.status}</span></div>)}</div></div></div>;
+  const [posts,setPosts] = useState<DiscussionPost[]>([]);
+  const [message,setMessage] = useState("");
+  const [msg,setMsg] = useState("");
+  const load = () => fetch("/api/student-tools").then(r => r.ok ? r.json() : null).then(d => { if (d) setPosts(d.posts || []); }).catch(() => {});
+  useEffect(() => { load(); }, []);
+  async function post() {
+    if (!message.trim()) return;
+    const r = await fetch("/api/student-tools", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "discussion", message }) });
+    if (r.ok) { setMessage(""); setMsg(""); load(); } else setMsg("Could not post message.");
+  }
+  return <div className="card"><div className="section-head"><div><h3>💬 Class Discussion</h3><div className="hint">Ask questions and share useful class information.</div></div></div><div className="inline-form"><input value={message} onChange={e => setMessage(e.target.value)} placeholder="Ask your class something..." /><button className="btn btn-primary btn-sm" onClick={post}>Post</button></div>{msg && <div className="error-text">{msg}</div>}<div className="discussion-list">{posts.slice(0,6).map(p => <div className="discussion-item" key={p.id}><strong>{p.student.fullName}</strong><span className="hint"> · {new Date(p.createdAt).toLocaleString()}</span><div>{p.message}</div></div>)}{posts.length === 0 && <div className="empty-state">No discussion posts yet.</div>}</div></div>;
 }
 
 function ClassHubStudent({ hub }: { hub: { announcements: HubItem[]; assignments: HubItem[]; exams: HubItem[]; materials: HubItem[]; polls: HubItem[] } }) {
@@ -373,13 +371,11 @@ export default function PortalPage() {
         <div className="stat-grid">
           <div className="stat-card"><div className="label">ATTENDANCE</div><div className="value">{data ? `${data.overallPercentage}%` : "—"}</div></div>
           <div className="stat-card"><div className="label">PENDING WORK</div><div className="value">{hub.assignments.filter((x:any)=>new Date(x.dueDate).getTime()>=Date.now()).length}</div></div>
-          <div className="stat-card"><div className="label">UPCOMING EXAMS</div><div className="value">{hub.exams.filter((x:any)=>new Date(x.date).getTime()>=Date.now()-86400000).length}</div></div>
           <div className={`stat-card ${data && data.overallPercentage < threshold ? "warn" : ""}`}><div className="label">STATUS</div><div className="value">{data && data.overallPercentage < threshold ? "⚠️" : "✓"}</div></div>
         </div>
 
         <div className="feature-grid">
           <AssignmentTracker assignments={hub.assignments} />
-          <ExamCountdown exams={hub.exams} />
         </div>
 
         {data && <AttendanceCalculator data={data} threshold={threshold} />}
