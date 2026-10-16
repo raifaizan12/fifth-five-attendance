@@ -34,7 +34,7 @@ export default function LoginPage() {
         <aside className="auth-visual">
           <div className="auth-visual-top">
             <div className="auth-logo"><span>5</span></div>
-            <div><b>FIFTH FIVE</b><small>ATTENDANCE PLATFORM</small></div>
+            <div><b>CLASS PORTAL</b><small>FIFTH FIVE · ACADEMIC WORKSPACE</small></div>
           </div>
 
           <div className="auth-visual-main">
@@ -57,7 +57,7 @@ export default function LoginPage() {
 
         <section className="auth-card-wrap">
           <div className="auth-card">
-            <div className="auth-mobile-brand"><div className="auth-logo"><span>5</span></div><div><b>FIFTH FIVE</b><small>ATTENDANCE</small></div></div>
+            <div className="auth-mobile-brand"><div className="auth-logo"><span>5</span></div><div><b>CLASS PORTAL</b><small>FIFTH FIVE</small></div></div>
             <div className="auth-heading">
               <span className="auth-eyebrow">{isCR ? "CR PORTAL" : "STUDENT PORTAL"}</span>
               <h1>Welcome back<span>.</span></h1>
@@ -81,7 +81,7 @@ export default function LoginPage() {
             </form>
 
             <div className="auth-security"><span>✓</span><div><b>Protected workspace</b><p>Your credentials and attendance data stay protected with role-based access.</p></div></div>
-            <div className="auth-foot"><span>Fifth Five Attendance</span><span>v1.1</span></div>
+            <div className="auth-foot"><span>Fifth Five Class Portal</span><span>v1.1</span></div>
           </div>
         </section>
       </section>

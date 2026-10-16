@@ -2,8 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "5th-5M Attendance Portal | IUB BS IT",
-  description: "Online attendance management portal for BS IT Fifth Five, The Islamia University of Bahawalpur.",
+  title: "Class Portal | Fifth Five · IUB BS IT",
+  description: "A modern class portal for attendance, timetables, announcements, academic resources, and student coordination at The Islamia University of Bahawalpur.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

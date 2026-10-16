@@ -7,4 +7,4 @@ export default async function StudentLayout({ children }: { children: React.Reac
   return <div><StudentNav settings={settings ? { portalLogoUrl: settings.portalLogoUrl, className: settings.className, university: settings.university, program: settings.program, semester: settings.semester } : null} />{children}</div>;
 }
 
-export const viewport: Viewport = { themeColor: "#07111f" };
+export const viewport: Viewport = { themeColor: "#f3f6fb" };

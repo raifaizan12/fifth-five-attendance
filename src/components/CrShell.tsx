@@ -1,7 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import PortalLogo from "./PortalLogo";
 
@@ -29,14 +30,40 @@ const TABS = [
 
 export default function CrShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [launcherOpen, setLauncherOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const shortcuts = useMemo(() => TABS.map(([href, label]) => ({ href, label, description: href === "/attendance" ? "Mark and review class attendance" : href === "/students" ? "Manage class roster and student records" : href === "/timetable" ? "View and update class schedule" : href === "/hub" ? "Announcements and class resources" : href === "/reports" ? "Attendance summaries and exports" : `Open ${label.toLowerCase()} workspace` })), []);
+  const filteredShortcuts = shortcuts.filter((item) => `${item.label} ${item.description}`.toLowerCase().includes(query.trim().toLowerCase()));
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setLauncherOpen((open) => !open); }
+      if (event.key === "Escape") setLauncherOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+  useEffect(() => { if (launcherOpen) { setQuery(""); window.setTimeout(() => document.getElementById("class-portal-launcher-search")?.focus(), 30); } }, [launcherOpen]);
+  const openShortcut = (href: string) => { setLauncherOpen(false); router.push(href); };
   return <div className="cr-app">
-    <header className="cr-mobile-top"><PortalLogo size={38} /><div><b>FIFTH FIVE</b><small>CR PORTAL</small></div><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></header>
+    <header className="cr-mobile-top"><PortalLogo size={38} /><div><b>CLASS PORTAL</b><small>FIFTH FIVE · CR WORKSPACE</small></div><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></header>
     <aside className="cr-sidebar">
-      <div className="cr-sidebar-brand"><PortalLogo size={42}/><div><b>FIFTH FIVE</b><span>CR PORTAL</span></div></div>
+      <div className="cr-sidebar-brand"><PortalLogo size={42}/><div><b>CLASS PORTAL</b><span>FIFTH FIVE · CR WORKSPACE</span></div></div>
       <div className="cr-side-label">CLASS MANAGEMENT</div>
       <nav>{TABS.map(([href,label]) => <Link key={href} href={href} className={pathname?.startsWith(href) ? "active" : ""}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ICONS[href]}</svg><span>{label}</span></Link>)}</nav>
       <div className="cr-sidebar-bottom"><div className="cr-live"><i/> System online</div><button onClick={() => signOut({ callbackUrl: "/login" })}>↪ <span>Sign out</span></button></div>
     </aside>
-    <main className="cr-main"><div className="cr-mainbar"><div><span>CLASS REPRESENTATIVE</span><b>Fifth Five · Management</b></div><div className="cr-main-actions"><span className="cr-live-pill"><i/> Live</span><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></div></div><div className="page">{children}</div></main>
+    <main className="cr-main"><div className="cr-mainbar"><div><span>CLASS MANAGEMENT</span><b>Fifth Five · Class Representative Workspace</b></div><div className="cr-main-actions"><button className="cr-command-trigger" onClick={() => setLauncherOpen(true)} aria-label="Open quick navigation"><span>⌕</span><span>Quick jump</span><kbd>Ctrl K</kbd></button><span className="cr-live-pill"><i/> Live</span><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></div></div><div className="page">{children}</div></main>
+    {launcherOpen && <div className="cr-command-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setLauncherOpen(false); }}>
+      <section className="cr-command-dialog" role="dialog" aria-modal="true" aria-label="Quick navigation">
+        <div className="cr-command-search"><span aria-hidden="true">⌕</span><input id="class-portal-launcher-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search pages, attendance, reports…" aria-label="Search portal pages" /><kbd>ESC</kbd></div>
+        <div className="cr-command-caption">QUICK NAVIGATION <span>{filteredShortcuts.length} destinations</span></div>
+        <div className="cr-command-results">{filteredShortcuts.map((item, index) => <button key={item.href} className="cr-command-item" onClick={() => openShortcut(item.href)}>
+          <span className="cr-command-item-icon">{ICONS[item.href] ? <svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[item.href]}</svg> : "↗"}</span>
+          <span className="cr-command-item-copy"><b>{item.label}</b><small>{item.description}</small></span><span className="cr-command-enter">↵</span>
+        </button>)}{filteredShortcuts.length === 0 && <div className="cr-command-empty">No pages found. Try “attendance”, “students”, or “reports”.</div>}</div>
+        <footer className="cr-command-footer"><span><kbd>Ctrl</kbd> + <kbd>K</kbd> to open anywhere</span><span>CLASS PORTAL <b>·</b> FIFTH FIVE</span></footer>
+      </section>
+    </div>}
   </div>;
 }

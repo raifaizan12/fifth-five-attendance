@@ -33,7 +33,7 @@ export default function StudentNav({ settings }: { settings: StudentSettings | n
   const university = settings?.university || "The Islamia University of Bahawalpur";
   return <div className="student-shell">
     <header className="student-pro-topbar">
-      <div className="student-pro-identity"><PortalLogo size={44} fallback={<BrandMark />} /><div><div className="student-pro-brand">FIFTH FIVE <span>STUDENT</span></div><div className="student-pro-sub">{program} · {className} · {university}</div></div></div>
+      <div className="student-pro-identity"><PortalLogo size={44} fallback={<BrandMark />} /><div><div className="student-pro-brand">CLASS PORTAL <span>STUDENT</span></div><div className="student-pro-sub">{program} · {className} · {university}</div></div></div>
       <div className="student-head-right"><span className="student-online"><i/> Online</span><button className="student-pro-logout" onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></div>
     </header>
     <nav className="student-pro-nav" aria-label="Student portal navigation">{items.map(x => <Link key={x.href} className={p === x.href ? "active" : ""} href={x.href}><b>{x.icon}</b><span>{x.label}</span></Link>)}</nav>
