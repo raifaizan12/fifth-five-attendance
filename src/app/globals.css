@@ -1710,3 +1710,44 @@ tbody tr:hover td { background: #f5fafb !important; }
   .cr-command-footer span:last-child { display:none; }
 }
 @media (prefers-reduced-motion:reduce) { .cr-command-overlay,.cr-command-dialog { animation:none; } .cr-sidebar nav a,.card,.stat-card,.pro-card { transition:none; } }
+
+/* Student account security — refined light class portal layout */
+.student-password-page{max-width:1120px!important;padding-top:34px!important;padding-bottom:56px!important;color:#17243a}
+.student-password-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:30px 34px;margin-bottom:22px;border:1px solid rgba(27,67,91,.1);border-radius:26px;background:radial-gradient(circle at 90% 15%,rgba(45,212,191,.19),transparent 30%),linear-gradient(125deg,#fff 0%,#f5fbff 62%,#edfbf8 100%);box-shadow:0 20px 55px rgba(26,57,82,.06)}
+.student-password-kicker{font-size:10px;letter-spacing:.17em;font-weight:900;color:#0d9488}
+.student-password-hero h1{margin:10px 0 9px;font:800 clamp(27px,4vw,40px)/1.13 Sora, sans-serif;letter-spacing:-.045em;color:#17243a}
+.student-password-hero h1 span{color:#0d9488}
+.student-password-hero p{margin:0;max-width:610px;color:#68788d;font-size:14px;line-height:1.75}
+.student-password-hero-icon{width:66px;height:66px;display:grid;place-items:center;flex:none;border:1px solid rgba(13,148,136,.18);border-radius:22px;background:rgba(255,255,255,.72);color:#0d9488;font-size:31px;box-shadow:0 10px 30px rgba(13,148,136,.08)}
+.student-password-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:22px;align-items:start}
+.student-password-card,.student-password-tips{border:1px solid rgba(27,67,91,.1);border-radius:23px;background:rgba(255,255,255,.94);box-shadow:0 16px 48px rgba(26,57,82,.055)}
+.student-password-card{padding:28px}
+.student-password-card-title{display:flex;gap:14px;align-items:center;padding-bottom:22px;border-bottom:1px solid #edf1f6;margin-bottom:23px}
+.student-password-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:15px;background:#e8faf6;color:#0d9488;font-size:25px}
+.student-password-card-title h2,.student-password-tips h2{margin:0;color:#1c2b40;font:750 18px Sora,sans-serif;letter-spacing:-.025em}
+.student-password-card-title p{margin:6px 0 0;color:#758397;font-size:12px;line-height:1.6}
+.student-password-form{display:grid;gap:17px}
+.student-password-form>label:not(.student-password-show){display:grid;gap:8px;color:#394b61;font-size:12px;font-weight:750}
+.student-password-form input:not([type=checkbox]){width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #dfe7ef;border-radius:12px;background:#fbfdff;color:#1d2c40;font:500 13px "IBM Plex Sans",sans-serif;outline:none;transition:border-color .18s,box-shadow .18s}
+.student-password-form input:not([type=checkbox]):focus{border-color:#42b8ad;box-shadow:0 0 0 4px rgba(13,148,136,.1);background:#fff}
+.student-password-show{display:flex;align-items:center;gap:9px;color:#68788d;font-size:12px;cursor:pointer}
+.student-password-show input{accent-color:#0d9488;width:15px;height:15px}
+.student-password-submit{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-top:2px;padding:14px 17px;border:0;border-radius:13px;background:linear-gradient(115deg,#087f78,#0d9488 58%,#22a699);color:white;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 10px 22px rgba(13,148,136,.18);transition:transform .18s,box-shadow .18s}
+.student-password-submit:hover{transform:translateY(-1px);box-shadow:0 14px 28px rgba(13,148,136,.23)}
+.student-password-submit:disabled{opacity:.65;cursor:wait;transform:none}
+.student-password-submit span{font-size:17px}
+.student-password-message{padding:12px 13px;border-radius:11px;font-size:12px;line-height:1.5}
+.student-password-message.error{background:#fff1f1;border:1px solid #ffd7d7;color:#a52b37}
+.student-password-message.success{background:#ecfbf4;border:1px solid #c8f2df;color:#14754e}
+.student-password-tips{padding:26px;background:linear-gradient(155deg,#fff,#f7fbff)}
+.student-password-tip-mark{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:#e8faf6;color:#0d9488;font-size:19px;font-weight:900;margin-bottom:17px}
+.student-password-tips ul{display:grid;gap:13px;margin:20px 0;padding-left:19px;color:#63748a;font-size:12px;line-height:1.7}
+.student-password-note{margin-top:23px;padding:15px;border:1px solid #dcefeb;border-radius:14px;background:#f0fbf8}
+.student-password-note b{font-size:12px;color:#1a514b}
+.student-password-note p{margin:7px 0 0;color:#55766f;font-size:11px;line-height:1.7}
+.student-password-back{display:inline-flex;margin-top:22px;color:#0d8179;text-decoration:none;font-size:12px;font-weight:800}
+.student-password-back:hover{text-decoration:underline}
+.auth-first-login-note{margin:0;padding:11px 12px;border-radius:11px;background:rgba(13,148,136,.07);border:1px solid rgba(13,148,136,.13);color:#617286;font-size:11px;line-height:1.65}
+.auth-first-login-note b{color:#167d75}
+@media(max-width:760px){.student-password-page{padding:20px 14px 38px!important}.student-password-hero{padding:23px 20px;border-radius:20px}.student-password-hero-icon{width:48px;height:48px;border-radius:15px;font-size:23px}.student-password-grid{grid-template-columns:1fr;gap:15px}.student-password-card,.student-password-tips{padding:21px;border-radius:19px}}
+@media(max-width:430px){.student-password-hero-icon{display:none}.student-password-hero h1{font-size:28px}.student-password-card-title h2{font-size:16px}}

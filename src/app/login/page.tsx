@@ -74,9 +74,10 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
-              <label>{isCR ? "CR email" : "Registration number"}<div className="auth-input"><span>{isCR ? "@" : "#"}</span><input value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder={isCR ? "cr@fifthfive.iub.edu.pk" : "BSIT-F21-045"} required autoCapitalize="none" autoComplete={isCR ? "email" : "username"} /></div></label>
+              <label>{isCR ? "CR email" : "IUB ID"}<div className="auth-input"><span>{isCR ? "@" : "#"}</span><input value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder={isCR ? "cr@fifthfive.iub.edu.pk" : "Your IUB ID"} required autoCapitalize="none" autoComplete={isCR ? "email" : "username"} /></div></label>
               <label>Password<div className="auth-input"><span>••</span><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required autoComplete="current-password" /></div></label>
-              {error && <div className="auth-error"><b>!</b>{error}</div>}
+              {!isCR && <p className="auth-first-login-note">First time here? Use the initial password provided by your CR (often your registration number), then set a private password from <b>Student Portal → Password</b>.</p>}
+            {error && <div className="auth-error"><b>!</b>{error}</div>}
               <button className="auth-submit" type="submit" disabled={loading}><span>{loading ? "Signing in…" : `Continue as ${isCR ? "Class Rep" : "Student"}`}</span><b>↗</b></button>
             </form>
 
