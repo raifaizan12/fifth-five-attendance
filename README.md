@@ -1,6 +1,13 @@
 # 5TH-5M ATTENDANCE PORTAL
 BS Information Technology · The Islamia University of Bahawalpur (IUB)
 
+
+> **IMPORTANT — preserving an existing attendance database:** If this portal is already deployed and
+> contains real attendance records, keep the existing production `DATABASE_URL`. Do not create a new
+> database, run a reset, or run `npm run seed` against production. Back up the database before any
+> schema change. Never use `prisma db push --accept-data-loss`. For code-only updates, deploy without
+> changing the database. Review `DATA-PRESERVATION.md` before applying schema changes.
+
 A complete, working attendance management system: CR/Admin dashboard, mobile-friendly
 quick attendance marking, student self-service portal, CSV import/export, reports,
 audit log, and backups — deployable for **$0**.
@@ -74,12 +81,13 @@ The easiest way (no local setup needed):
    ```
 2. Create a `.env` file (copy `.env.example`) and paste in the same `DATABASE_URL`,
    `SEED_ADMIN_EMAIL`, and `SEED_ADMIN_PASSWORD` you used on Vercel.
-3. Push the schema to your live database and seed the CR account:
+3. **Only for a brand-new, empty database:** review the Prisma schema, then apply it and create the initial CR account:
    ```bash
    npx prisma db push
    npm run seed
    ```
-4. That's it — your live database now has all the tables and one CR account.
+   For an existing portal with attendance records, do not repeat the seed step and do not blindly push schema changes. Back up the database and review `DATA-PRESERVATION.md` first.
+4. For a new database, the initial setup creates the required tables and CR account.
 
 ### Step E — Update NEXTAUTH_URL and redeploy
 Go back to your Vercel project → Settings → Environment Variables → add/update
