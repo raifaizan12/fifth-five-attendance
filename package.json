@@ -1,15 +1,18 @@
 {
   "name": "class-portal",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Class portal with CR and student logins, backed by SQLite",
+  "description": "Class portal (CR + student logins) for Vercel with Neon Postgres",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.3.0",
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.12"
   }
 }

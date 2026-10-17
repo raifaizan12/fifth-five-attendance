@@ -1,50 +1,30 @@
-# Class Portal
+# Class Portal (Vercel + Neon Postgres)
 
-A class portal with **CR/teacher login**, **student login** and a **SQLite database**.
-Node.js + Express backend, single-page frontend (no build step).
+CR/teacher login, student login, attendance, assignments, announcements and maintenance mode.
+Backend: Express as a Vercel serverless function (`api/index.js`). Database: Neon Postgres.
+Frontend: `public/index.html` (no build step).
 
-## Features
-- Student sign-up (protected by a class code) and login; CR/teacher login
-- CR: post announcements and assignments, mark attendance (Present/Absent/Late) by date,
-  view all students with attendance % and assignments done, add students or other CR accounts,
-  reset passwords, remove students, turn **maintenance mode** on/off with a message
-- Students: see announcements, tick off assignments, see their own attendance record
-- Passwords hashed with bcrypt, login cookies are httpOnly, login attempts are rate limited
+## Deploy on Vercel (same project / same link)
+1. Neon: create a project at neon.tech, copy the **pooled** connection string.
+2. Vercel -> your project -> Settings -> Environment Variables, add (Production, Preview, Development):
+   - `DATABASE_URL`  (Neon string)
+   - `ADMIN_USERNAME`, `ADMIN_PASSWORD`  (your CR login)
+   - `CLASS_CODE`  (code students need to sign up)
+3. Push this repo to GitHub. Vercel redeploys automatically.
+4. Open the site and log in with ADMIN_USERNAME / ADMIN_PASSWORD. Tables are created on first request.
+
+`vercel.json` already sets Framework = Other, no build command, output folder `public`.
+If a deploy fails, check Settings -> General: remove any old Build Command / Output Directory overrides.
 
 ## Run locally
 ```
 npm install
-cp .env.example .env      # then edit it (on Windows: copy .env.example .env)
-node --env-file=.env server.js    # Node 20.6+; or just set the variables in your shell
+# set DATABASE_URL, ADMIN_PASSWORD, CLASS_CODE in your shell, then:
+node server.js
 ```
-Open http://localhost:3000 and log in with ADMIN_USERNAME / ADMIN_PASSWORD.
-If you skip ADMIN_PASSWORD, one is generated and printed in the console on first run.
-
-## Deploy
-The app needs a place to keep `portal.db`, so use a host with a **persistent disk or volume**.
-Free tiers whose disk resets on every deploy will lose your data.
-
-**Any VPS (DigitalOcean, Hetzner, AWS Lightsail...)** with Docker:
-```
-cp .env.example .env     # edit values
-docker compose up -d --build
-```
-Put Caddy or Nginx in front for HTTPS (for example `caddy reverse-proxy --from yourdomain.com --to localhost:3000`).
-
-**Railway / Fly.io / Render (paid disk):** deploy this folder (the Dockerfile is detected),
-attach a volume mounted at `/data`, and set the environment variables from `.env.example`
-in the dashboard. `DATA_DIR` is already `/data` in the Docker image.
-
-Always serve over HTTPS in production so login cookies stay private.
-
-## Backups
-Copy the `data/` folder (or the `/data` volume): `portal.db` is the whole database.
-
-## Android app
-Your Android Studio WebView project can load this site: in `MainActivity.java` change
-`web.loadUrl("file:///android_asset/index.html")` to `web.loadUrl("https://your-domain.com")`.
 
 ## Notes
-- Usernames are case-insensitive. Passwords need 6+ characters.
-- The CR sees students' data; students only see their own attendance and completion.
-- To change the class code, edit `CLASS_CODE` and restart.
+- Change the CR password after first login (Account tab). Changing ADMIN_PASSWORD later does not
+  change an existing account; it is only used when no CR exists.
+- The CR can add more CR accounts in the Students tab.
+- Database data lives in Neon, so redeploys never erase it.
