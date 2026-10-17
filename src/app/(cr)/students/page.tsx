@@ -31,7 +31,7 @@ export default function StudentsPage() {
     setLoading(true);
     const res = await fetch(`/api/students${q ? `?q=${encodeURIComponent(q)}` : ""}`);
     const data = await res.json();
-    setStudents((data.students || []).sort((a: Student, b: Student) => a.regNumber.localeCompare(b.regNumber, undefined, { numeric: true, sensitivity: "base" })));
+    setStudents(data.students || []);
     setLoading(false);
   }
 

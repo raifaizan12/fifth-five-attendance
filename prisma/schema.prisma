@@ -1,4 +1,4 @@
-// Prisma schema for IUB BS IT - 5th-5M Attendance Portal
+// Prisma schema for IUB BS IT - Fifth Five Attendance Portal
 // Free-tier Postgres (Neon / Supabase) works fine with this schema.
 
 generator client {
@@ -11,7 +11,7 @@ datasource db {
 }
 
 enum Role {
-  ADMIN // Class Representative
+  ADMIN   // Class Representative
   STUDENT
 }
 
@@ -36,47 +36,38 @@ model User {
   student   Student? @relation(fields: [studentId], references: [id])
   studentId String?  @unique
 
-  auditLogs         AuditLog[]
-  loginSessions     LoginSession[]
-  pushSubscriptions PushSubscription[]
-  notifications     Notification[]
+  auditLogs AuditLog[]
 
   @@index([role])
 }
 
 model Student {
-  id        String   @id @default(cuid())
-  fullName  String
-  iubId     String   @unique // e.g. BSIT-F21-045
-  regNumber String   @unique
-  semester  String
-  program   String   @default("BS Information Technology")
-  section   String   @default("5TH-5M")
-  email     String?
-  phone     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  fullName     String
+  iubId        String   @unique // e.g. BSIT-F21-045
+  regNumber    String   @unique
+  semester     String
+  program      String   @default("BS Information Technology")
+  section      String   @default("Fifth Five")
+  email        String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user               User?
   attendanceRecords  AttendanceRecord[]
-  pollVotes          PollVote[]
-  discussionPosts    DiscussionPost[]
-  issues             StudentIssue[]
-  leaveRequests      LeaveRequest[]
-  correctionRequests AttendanceCorrectionRequest[]
 
   @@index([section])
   @@index([semester])
 }
 
 model Teacher {
-  timetableEntries TimetableEntry[]
-  id               String           @id @default(cuid())
-  fullName         String
-  email            String?
-  phone            String?
-  createdAt        DateTime         @default(now())
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
 
   subjects           Subject[]
   attendanceSessions AttendanceSession[]
@@ -92,8 +83,7 @@ model Subject {
   teacher   Teacher? @relation(fields: [teacherId], references: [id])
   teacherId String?
 
-  sessions         AttendanceSession[]
-  timetableEntries TimetableEntry[]
+  sessions AttendanceSession[]
 
   @@index([semester])
 }
@@ -113,12 +103,7 @@ model AttendanceSession {
 
   createdBy String // User id of CR who created it
 
-  records            AttendanceRecord[]
-  correctionRequests AttendanceCorrectionRequest[]
-
-  // Optional short-lived QR attendance session. The token is never shown to students as a manual code.
-  qrToken     String?   @unique
-  qrExpiresAt DateTime?
+  records AttendanceRecord[]
 
   // A subject cannot have two sessions on the same date+topic (prevents accidental duplicates)
   @@unique([subjectId, date, topic])
@@ -126,10 +111,10 @@ model AttendanceSession {
 }
 
 model AttendanceRecord {
-  id        String           @id @default(cuid())
+  id        String            @id @default(cuid())
   status    AttendanceStatus
-  markedAt  DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  markedAt  DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   session   AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   sessionId String
@@ -144,8 +129,8 @@ model AttendanceRecord {
 
 model AuditLog {
   id           String   @id @default(cuid())
-  action       String // e.g. "STUDENT_ADDED", "ATTENDANCE_MODIFIED"
-  affectedType String // e.g. "Student", "AttendanceRecord"
+  action       String   // e.g. "STUDENT_ADDED", "ATTENDANCE_MODIFIED"
+  affectedType String   // e.g. "Student", "AttendanceRecord"
   affectedId   String?
   details      String?
   createdAt    DateTime @default(now())
@@ -157,202 +142,11 @@ model AuditLog {
 }
 
 model Settings {
-  id                  Int     @id @default(1)
-  className           String  @default("Fifth Five")
-  university          String  @default("The Islamia University of Bahawalpur")
-  program             String  @default("BS Information Technology")
-  semester            String  @default("")
-  academicYear        String  @default("")
-  attendanceThreshold Int     @default(75)
-  portalLogoUrl       String? @db.Text
-  maintenanceMode     Boolean @default(false)
-  maintenanceMessage  String  @default("The student portal is temporarily unavailable for scheduled maintenance. Please check back soon.") @db.Text
-}
-
-model TimetableEntry {
-  id             String    @id @default(cuid())
-  day            String // "Monday" .. "Sunday"
-  startTime      String // 24-hour "HH:MM", e.g. "09:00"
-  endTime        String // 24-hour "HH:MM", e.g. "10:30"
-  room           String?
-  section        String    @default("Fifth Five")
-  activeFrom     DateTime?
-  activeUntil    DateTime?
-  locationLat    Float?
-  locationLng    Float?
-  geofenceRadius Int       @default(100)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId String
-
-  teacher   Teacher? @relation(fields: [teacherId], references: [id])
-  teacherId String?
-
-  @@index([day])
-}
-
-model Announcement {
-  id        String   @id @default(cuid())
-  title     String
-  body      String   @db.Text
-  priority  String   @default("NORMAL")
-  pinned    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Assignment {
-  id          String   @id @default(cuid())
-  title       String
-  description String?  @db.Text
-  subject     String?
-  dueDate     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model ExamEvent {
-  id        String   @id @default(cuid())
-  title     String
-  subject   String
-  date      DateTime
-  startTime String?
-  room      String?
-  kind      String   @default("EXAM")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model StudyMaterial {
-  id          String   @id @default(cuid())
-  title       String
-  subject     String?
-  url         String
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-}
-
-model ClassPoll {
-  id        String     @id @default(cuid())
-  question  String
-  options   String     @db.Text
-  active    Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  votes     PollVote[]
-}
-
-model PollVote {
-  id        String    @id @default(cuid())
-  poll      ClassPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  pollId    String
-  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-  option    String
-  createdAt DateTime  @default(now())
-
-  @@unique([pollId, studentId])
-}
-
-model DiscussionPost {
-  id        String   @id @default(cuid())
-  message   String   @db.Text
-  createdAt DateTime @default(now())
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-
-  @@index([createdAt])
-}
-
-model StudentIssue {
-  id        String   @id @default(cuid())
-  category  String
-  message   String   @db.Text
-  status    String   @default("OPEN")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-
-  @@index([studentId])
-  @@index([createdAt])
-}
-
-model ClassPhoto {
-  id        String   @id @default(cuid())
-  caption   String?
-  imageData String   @db.Text
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-}
-
-model LoginSession {
-  id         String    @id @default(cuid())
-  userId     String
-  loginAt    DateTime  @default(now())
-  lastActive DateTime  @default(now())
-  logoutAt   DateTime?
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, loginAt])
-  @@index([logoutAt, lastActive])
-}
-
-model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  title     String
-  message   String    @db.Text
-  kind      String    @default("GENERAL")
-  href      String?
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@index([userId, readAt])
-}
-
-model PushSubscription {
-  id        String   @id @default(cuid())
-  userId    String
-  endpoint  String   @db.Text
-  p256dh    String   @db.Text
-  auth      String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, endpoint])
-}
-
-model LeaveRequest {
-  id        String   @id @default(cuid())
-  studentId String
-  fromDate  DateTime
-  toDate    DateTime
-  reason    String   @db.Text
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([studentId, status])
-}
-
-model AttendanceCorrectionRequest {
-  id              String            @id @default(cuid())
-  studentId       String
-  sessionId       String
-  requestedStatus String
-  reason          String            @db.Text
-  status          String            @default("PENDING")
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  student         Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  session         AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([studentId, status])
+  id                  Int    @id @default(1)
+  className           String @default("Fifth Five")
+  university          String @default("The Islamia University of Bahawalpur")
+  program             String @default("BS Information Technology")
+  semester             String @default("")
+  academicYear         String @default("")
+  attendanceThreshold  Int    @default(75)
 }

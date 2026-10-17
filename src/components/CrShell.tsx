@@ -1,69 +1,61 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
-import PortalLogo from "./PortalLogo";
+import BrandMark from "./BrandMark";
 
 const ICONS: Record<string, React.ReactNode> = {
   "/dashboard": <path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z" />,
   "/attendance": <path d="M9 11l3 3 5-5M20 12a8 8 0 1 1-8-8 8 8 0 0 1 8 8Z" />,
   "/students": <path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-8 1a3.5 3.5 0 1 0-3.5-3.5A3.5 3.5 0 0 0 8 12Zm8 2c-3.3 0-8 1.34-8 4v3h16v-3c0-2.66-4.7-4-8-4Zm-8 1.2c-2.9.42-5 1.6-5 2.8v2h5" />,
   "/subjects": <path d="M4 19.5V5a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v14M6 3h12M6 21h13" />,
-  "/hub": <path d="M4 5h16M4 12h16M4 19h16" />,
-  "/photos": <path d="M4 5h16v14H4zM8 13l2.5-3 2.2 2.4 1.7-2 3.6 4.1M8 9h.01" />,
-  "/timetable": <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm3 8h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01" />,
-  "/analytics": <path d="M4 19V5m0 14h16M8 16l3-5 3 3 5-8" />,
-  "/requests": <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
-  "/qr": <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM16 16h2v2h-2z" />,
   "/reports": <path d="M4 20V10m6 10V4m6 16v-7" />,
   "/audit": <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 13h6M9 17h6" />,
   "/backup": <path d="M12 3v12m0 0-4-4m4 4 4-4M5 19h14" />,
-  "/feedback": <path d="M4 5h16v11H8l-4 4V5Zm4 4h8M8 13h5" />,
   "/settings": <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8-3a8 8 0 0 0-.2-1.8l2-1.6-2-3.4-2.3.9a7.9 7.9 0 0 0-3-1.7L14 2h-4l-.5 2.4a7.9 7.9 0 0 0-3 1.7l-2.3-.9-2 3.4 2 1.6a8 8 0 0 0 0 3.6l-2 1.6 2 3.4 2.3-.9a7.9 7.9 0 0 0 3 1.7L10 22h4l.5-2.4a7.9 7.9 0 0 0 3-1.7l2.3.9 2-3.4-2-1.6A8 8 0 0 0 20 12Z" />,
 };
 
 const TABS = [
-  ["/dashboard", "Dashboard"], ["/attendance", "Attendance"], ["/students", "Students"], ["/subjects", "Subjects"], ["/timetable", "Timetable"], ["/hub", "Class Hub"], ["/feedback", "Feedback"], ["/photos", "Photos"], ["/analytics", "Analytics"], ["/requests", "Requests"], ["/qr", "QR Attendance"], ["/reports", "Reports"], ["/audit", "Audit Log"], ["/backup", "Backup"], ["/settings", "Settings"],
-] as const;
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/attendance", label: "Mark Attendance" },
+  { href: "/students", label: "Students" },
+  { href: "/subjects", label: "Subjects" },
+  { href: "/reports", label: "Reports" },
+  { href: "/audit", label: "Audit Log" },
+  { href: "/backup", label: "Backup" },
+  { href: "/settings", label: "Settings" },
+];
 
 export default function CrShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [launcherOpen, setLauncherOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const shortcuts = useMemo(() => TABS.map(([href, label]) => ({ href, label, description: href === "/attendance" ? "Mark and review class attendance" : href === "/students" ? "Manage class roster and student records" : href === "/timetable" ? "View and update class schedule" : href === "/hub" ? "Announcements and class resources" : href === "/reports" ? "Attendance summaries and exports" : `Open ${label.toLowerCase()} workspace` })), []);
-  const filteredShortcuts = shortcuts.filter((item) => `${item.label} ${item.description}`.toLowerCase().includes(query.trim().toLowerCase()));
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setLauncherOpen((open) => !open); }
-      if (event.key === "Escape") setLauncherOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-  useEffect(() => { if (launcherOpen) { setQuery(""); window.setTimeout(() => document.getElementById("class-portal-launcher-search")?.focus(), 30); } }, [launcherOpen]);
-  const openShortcut = (href: string) => { setLauncherOpen(false); router.push(href); };
-  return <div className="cr-app">
-    <header className="cr-mobile-top"><PortalLogo size={38} /><div><b>CLASS PORTAL</b><small>FIFTH FIVE · CR WORKSPACE</small></div><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></header>
-    <aside className="cr-sidebar">
-      <div className="cr-sidebar-brand"><PortalLogo size={42}/><div><b>CLASS PORTAL</b><span>FIFTH FIVE · CR WORKSPACE</span></div></div>
-      <div className="cr-side-label">CLASS MANAGEMENT</div>
-      <nav>{TABS.map(([href,label]) => <Link key={href} href={href} className={pathname?.startsWith(href) ? "active" : ""}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ICONS[href]}</svg><span>{label}</span></Link>)}</nav>
-      <div className="cr-sidebar-bottom"><div className="cr-live"><i/> System online</div><button onClick={() => signOut({ callbackUrl: "/login" })}>↪ <span>Sign out</span></button></div>
-    </aside>
-    <main className="cr-main"><div className="cr-mainbar"><div><span>CLASS MANAGEMENT</span><b>Fifth Five · Class Representative Workspace</b></div><div className="cr-main-actions"><button className="cr-command-trigger" onClick={() => setLauncherOpen(true)} aria-label="Open quick navigation"><span>⌕</span><span>Quick jump</span><kbd>Ctrl K</kbd></button><span className="cr-live-pill"><i/> Live</span><button onClick={() => signOut({ callbackUrl: "/login" })}>Logout</button></div></div><div className="page">{children}</div></main>
-    {launcherOpen && <div className="cr-command-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setLauncherOpen(false); }}>
-      <section className="cr-command-dialog" role="dialog" aria-modal="true" aria-label="Quick navigation">
-        <div className="cr-command-search"><span aria-hidden="true">⌕</span><input id="class-portal-launcher-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search pages, attendance, reports…" aria-label="Search portal pages" /><kbd>ESC</kbd></div>
-        <div className="cr-command-caption">QUICK NAVIGATION <span>{filteredShortcuts.length} destinations</span></div>
-        <div className="cr-command-results">{filteredShortcuts.map((item, index) => <button key={item.href} className="cr-command-item" onClick={() => openShortcut(item.href)}>
-          <span className="cr-command-item-icon">{ICONS[item.href] ? <svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[item.href]}</svg> : "↗"}</span>
-          <span className="cr-command-item-copy"><b>{item.label}</b><small>{item.description}</small></span><span className="cr-command-enter">↵</span>
-        </button>)}{filteredShortcuts.length === 0 && <div className="cr-command-empty">No pages found. Try “attendance”, “students”, or “reports”.</div>}</div>
-        <footer className="cr-command-footer"><span><kbd>Ctrl</kbd> + <kbd>K</kbd> to open anywhere</span><span>CLASS PORTAL <b>·</b> FIFTH FIVE</span></footer>
-      </section>
-    </div>}
-  </div>;
+  return (
+    <div>
+      <div className="topbar">
+        <div className="topbar-inner">
+          <div>
+            <BrandMark />
+            <div>
+              <h1>5th-5M Attendance Portal</h1>
+              <div className="sub">CR Dashboard · BS IT · IUB</div>
+            </div>
+          </div>
+          <button className="logout-btn" onClick={() => signOut({ callbackUrl: "/login" })}>
+            Log out
+          </button>
+        </div>
+      </div>
+      <div className="nav-tabs">
+        {TABS.map((t) => (
+          <Link key={t.href} href={t.href} className={`nav-tab ${pathname?.startsWith(t.href) ? "active" : ""}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              {ICONS[t.href]}
+            </svg>
+            {t.label}
+          </Link>
+        ))}
+      </div>
+      <div className="page">{children}</div>
+    </div>
+  );
 }

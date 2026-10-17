@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
           ],
         }
       : undefined,
-    orderBy: { regNumber: "asc" },
+    orderBy: { fullName: "asc" },
     include: { user: { select: { id: true, isActive: true } } },
   });
 

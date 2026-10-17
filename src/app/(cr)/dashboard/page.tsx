@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import CountUp from "@/components/CountUp";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -30,8 +29,6 @@ type DashboardData = {
   bucketCounts: { name: string; value: number; color: string }[];
 };
 
-type LeaderboardRow = { rank: number; fullName: string; iubId: string; percentage: number; present: number; streak: number };
-
 const CHART_TOOLTIP_STYLE = {
   background: "rgba(10, 17, 32, 0.95)",
   border: "1px solid rgba(126, 171, 204, 0.28)",
@@ -42,33 +39,16 @@ const CHART_TOOLTIP_STYLE = {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSessions, setActiveSessions] = useState<{ id: string; name: string; iubId: string; loginAt: string; lastActive: string }[]>([]);
-  const [sessionHistory, setSessionHistory] = useState<{ id: string; name: string; iubId: string; loginAt: string; lastActive: string; logoutAt: string | null }[]>([]);
-
-  useEffect(() => {
-    const loadActiveSessions = async () => {
-      try {
-        const response = await fetch("/api/student-sessions", { cache: "no-store" });
-        if (response.ok) { const result = await response.json(); setActiveSessions(result.sessions || []); setSessionHistory(result.history || []); }
-      } catch {}
-    };
-    loadActiveSessions();
-    const sessionTimer = setInterval(loadActiveSessions, 15000);
-    return () => clearInterval(sessionTimer);
-  }, []);
 
   useEffect(() => {
     async function load() {
-      const [studentsRes, settingsRes, sessionsRes, reportsRes, leaderboardRes] = await Promise.all([
+      const [studentsRes, settingsRes, sessionsRes, reportsRes] = await Promise.all([
         fetch("/api/students").then((r) => r.json()),
         fetch("/api/settings").then((r) => r.json()),
         fetch("/api/attendance/sessions?limit=10").then((r) => r.json()),
         fetch("/api/reports").then((r) => r.json()),
-        fetch("/api/leaderboard").then((r) => r.json()),
       ]);
-      setLeaderboard(leaderboardRes.podium || []);
 
       const totalStudents = studentsRes.students?.length || 0;
       const threshold = settingsRes.settings?.attendanceThreshold ?? 75;
@@ -145,65 +125,22 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="card" style={{ marginBottom: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 18 }}>Student Login Sessions</h2>
-            <p className="chart-sub" style={{ margin: "5px 0 0" }}>Live activity · refreshes every 15 seconds</p>
-          </div>
-          <span className="chip chip-up">{activeSessions.length} active</span>
-        </div>
-        {activeSessions.length === 0 ? <p className="chart-sub" style={{ marginTop: 16 }}>No students are currently active.</p> : (
-          <div style={{ overflowX: "auto", marginTop: 14 }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
-              <thead><tr>{["Student", "IUB ID", "Login Time", "Last Active", "Status"].map((label) => <th key={label} style={{ textAlign: "left", padding: "10px 8px", fontSize: 12, opacity: .7, borderBottom: "1px solid var(--border, #334155)" }}>{label}</th>)}</tr></thead>
-              <tbody>{activeSessions.map((item) => <tr key={item.id}>
-                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.name}</td>
-                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.iubId}</td>
-                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.loginAt).toLocaleString()}</td>
-                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.lastActive).toLocaleTimeString()}</td>
-                <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}><span className="chip chip-up">Active</span></td>
-              </tr>)}</tbody>
-            </table>
-          </div>
-        )}
-        <div style={{ marginTop: 24 }}>
-          <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>Saved Session History</h3>
-          <p className="chart-sub" style={{ margin: "0 0 10px" }}>Latest 50 student login records are stored in the database, including logout time.</p>
-          {sessionHistory.length === 0 ? <p className="chart-sub">No saved sessions yet.</p> : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
-                <thead><tr>{["Student", "IUB ID", "Login Time", "Last Active", "Logout Time", "Status"].map((label) => <th key={label} style={{ textAlign: "left", padding: "10px 8px", fontSize: 12, opacity: .7, borderBottom: "1px solid var(--border, #334155)" }}>{label}</th>)}</tr></thead>
-                <tbody>{sessionHistory.map((item) => <tr key={item.id}>
-                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.name}</td>
-                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.iubId}</td>
-                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.loginAt).toLocaleString()}</td>
-                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{new Date(item.lastActive).toLocaleString()}</td>
-                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}>{item.logoutAt ? new Date(item.logoutAt).toLocaleString() : "—"}</td>
-                  <td style={{ padding: "11px 8px", borderBottom: "1px solid var(--border, #334155)" }}><span className="chip chip-up">{item.logoutAt ? "Logged out" : "Open session"}</span></td>
-                </tr>)}</tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="stat-grid">
         <div className="stat-card">
           <div className="label">Total Students</div>
-          <div className="value"><CountUp value={data.totalStudents} /></div>
+          <div className="value">{data.totalStudents}</div>
         </div>
         <div className="stat-card">
           <div className="label">Today Present</div>
-          <div className="value"><CountUp value={data.todayPresent} /></div>
+          <div className="value">{data.todayPresent}</div>
         </div>
         <div className="stat-card">
           <div className="label">Today Absent</div>
-          <div className="value"><CountUp value={data.todayAbsent} /></div>
+          <div className="value">{data.todayAbsent}</div>
         </div>
         <div className="stat-card">
           <div className="label">Overall Attendance</div>
-          <div className="value"><CountUp value={data.overallPercentage} suffix="%" /></div>
+          <div className="value">{data.overallPercentage}%</div>
         </div>
       </div>
 
@@ -285,23 +222,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {leaderboard.length > 0 && (
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>🏆 Class Leaderboard</h3>
-          <p className="chart-sub" style={{ marginTop: -8, marginBottom: 8 }}>Top attendance, all subjects combined</p>
-          {leaderboard.map((r) => (
-            <div key={r.iubId} className="leaderboard-row">
-              <span className={`lb-rank ${r.rank === 1 ? "top1" : r.rank === 2 ? "top2" : r.rank === 3 ? "top3" : ""}`}>
-                {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
-              </span>
-              <span className="lb-name">{r.fullName}{r.streak >= 3 ? " 🔥" : ""}</span>
-              <span className="lb-meta">{r.iubId}</span>
-              <span className="lb-pct"><CountUp value={r.percentage} suffix="%" /></span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {data.belowThreshold.length > 0 && (
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Students Below Attendance Threshold</h3>
@@ -343,4 +263,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
