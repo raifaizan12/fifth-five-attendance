@@ -1,0 +1,14 @@
+{
+  "name": "Fifth Five Smart Campus Portal",
+  "short_name": "Smart Campus",
+  "description": "Academic workspace for attendance, timetable, announcements and class resources.",
+  "start_url": "/portal",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fc",
+  "theme_color": "#315bd6",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

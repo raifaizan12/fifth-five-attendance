@@ -9,7 +9,7 @@ import BrandMark from "@/components/BrandMark";
 
 type StudentSettings = { portalLogoUrl?: string | null; className?: string | null; university?: string | null; program?: string | null; semester?: string | null };
 const items = [
-  { href: "/portal", label: "Home", icon: "⌂" }, { href: "/portal/analytics", label: "Analytics", icon: "◒" }, { href: "/portal/schedule", label: "Schedule", icon: "▦" }, { href: "/portal/notifications", label: "Alerts", icon: "♢" }, { href: "/portal/requests", label: "Requests", icon: "＋" }, { href: "/portal/scan", label: "Scan QR", icon: "⌗" }, { href: "/portal/password", label: "Password", icon: "♙" },
+  { href: "/portal", label: "Home", icon: "⌂" }, { href: "/portal/assistant", label: "AI Study Assistant", icon: "✦" }, { href: "/portal/analytics", label: "Analytics", icon: "◒" }, { href: "/portal/schedule", label: "Schedule", icon: "▦" }, { href: "/portal/notifications", label: "Alerts", icon: "♢" }, { href: "/portal/requests", label: "Requests", icon: "＋" }, { href: "/portal/scan", label: "Scan QR", icon: "⌗" }, { href: "/portal/password", label: "Password", icon: "♙" },
 ];
 
 export default function StudentNav({ settings }: { settings: StudentSettings | null }) {

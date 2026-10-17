@@ -2,8 +2,12 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Class Portal | Fifth Five · IUB BS IT",
-  description: "A modern class portal for attendance, timetables, announcements, academic resources, and student coordination at The Islamia University of Bahawalpur.",
+  title: "Smart Campus | Fifth Five Class Portal",
+  description: "A professional smart campus workspace for attendance, timetables, announcements, academic resources, student coordination, and class analytics.",
+  applicationName: "Fifth Five Smart Campus",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Smart Campus" },
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
