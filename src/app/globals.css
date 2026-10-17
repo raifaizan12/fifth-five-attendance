@@ -1887,3 +1887,206 @@ tbody tr:hover { background:#f7f9fd; }
 .assistant-side{display:grid;gap:16px}.assistant-side .card{margin:0;padding:20px}.assistant-side-icon{width:38px;height:38px;display:grid;place-items:center;margin-bottom:13px;border-radius:13px;background:#edf2ff;color:#315bd6;font-size:22px}.assistant-side h3{margin:0 0 7px;font-size:16px}.assistant-side p{margin:0 0 12px}.assistant-starters{display:grid;gap:8px}.assistant-starters button{display:flex;align-items:center;gap:12px;justify-content:space-between;text-align:left;padding:11px 12px;border:1px solid #e3eaf4;border-radius:12px;background:#fff;color:#3d506b;font-size:12px;line-height:1.5;cursor:pointer;transition:all .16s}.assistant-starters button:hover:not(:disabled){border-color:#bdcbf5;background:#f7f9ff;color:#315bd6;transform:translateY(-1px)}.assistant-starters button:disabled{opacity:.55;cursor:wait}.assistant-starters button span{flex:none;color:#315bd6}.assistant-responsible{background:linear-gradient(145deg,#fff,#f7fbfa)!important}.assistant-responsible ul{display:grid;gap:10px;padding-left:18px;margin:14px 0 0;color:#687990;font-size:12px;line-height:1.65}
 @media(max-width:850px){.assistant-layout{grid-template-columns:1fr}.assistant-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.assistant-hero{padding:22px 20px;border-radius:19px}.assistant-orb{width:49px;height:49px;border-radius:16px;font-size:24px}.assistant-layout{gap:14px}.assistant-side{grid-template-columns:1fr}.assistant-chat-head{padding:14px}.assistant-messages{padding:14px;min-height:220px}.assistant-message{max-width:96%}.assistant-composer-bottom{align-items:flex-start;flex-direction:column}.assistant-composer-bottom .btn{width:100%}}
+
+
+/* Fifth Five Class Portal — Premium Light Theme v2
+   Append after existing globals.css. Keeps existing page behavior and class names. */
+:root {
+  --base: #f4f7fc;
+  --deep: #edf2f9;
+  --glass: #ffffff;
+  --glass-sub: #f8faff;
+  --edge: #e1e8f2;
+  --edge-strong: #cbd7e7;
+  --cyan: #1688c7;
+  --cyan-soft: #1677b7;
+  --cyan-dim: #e6f4ff;
+  --amber: #b7791f;
+  --amber-soft: #946316;
+  --amber-dim: #fff5df;
+  --ink: #1c2b42;
+  --ink-dim: #5e6f86;
+  --ink-faint: #8190a5;
+  --green: #16835f;
+  --red: #c24158;
+  --green-dim: #e4f7ef;
+  --red-dim: #fff0f2;
+  --navy: #ffffff;
+  --navy-light: #f3f7fc;
+  --accent: #1688c7;
+  --accent-light: #e6f4ff;
+  --gray-50: #f8faff;
+  --gray-100: #edf2f9;
+  --gray-200: #e1e8f2;
+  --gray-500: #8190a5;
+  --gray-700: #5e6f86;
+  --gray-900: #1c2b42;
+}
+
+html, body {
+  background: #f4f7fc !important;
+  color: #1c2b42 !important;
+}
+body {
+  background-image:
+    radial-gradient(800px 480px at 0% 0%, rgba(69, 164, 230, .10), transparent 62%),
+    radial-gradient(760px 460px at 100% 0%, rgba(137, 123, 232, .09), transparent 60%),
+    linear-gradient(180deg, #f8faff 0%, #f1f5fb 100%) !important;
+  background-attachment: fixed;
+}
+::selection { background: #ccecff !important; color: #16314b !important; }
+:focus-visible { outline-color: #49a9df !important; }
+
+/* Main CR and student workspace surfaces */
+.topbar, .student-pro-topbar, .cr-mainbar {
+  color: #1c2b42 !important;
+  background: rgba(255,255,255,.88) !important;
+  border-color: #e1e8f2 !important;
+  box-shadow: 0 5px 24px rgba(31, 57, 91, .045) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+}
+.topbar h1, .topbar .sub, .topbar-inner, .student-pro-topbar, .cr-mainbar { color: #1c2b42 !important; }
+.topbar .sub { color: #7b8aa0 !important; }
+.nav-tabs, .student-pro-nav {
+  background: rgba(248,250,255,.92) !important;
+  border-color: #e1e8f2 !important;
+  box-shadow: inset 0 -1px 0 rgba(35,61,96,.025) !important;
+}
+.nav-tab { color: #64758c !important; }
+.nav-tab:hover { background: #edf5fd !important; color: #1d4e78 !important; }
+.nav-tab.active {
+  color: #176da5 !important;
+  background: #e4f3ff !important;
+  border-color: #c5e5fb !important;
+}
+.card, .pro-card, .hub-card, .chart-card, .subject-card, .assistant-chat-card,
+.attendance-history-card, .qr-card, .qr-live-card, .qr-scan-card,
+.settings-brand-card, .maintenance-card, .student-password-card,
+.student-password-tips, .notification-panel, .next-class-card, .tomorrow-card {
+  color: #24344c !important;
+  background: rgba(255,255,255,.94) !important;
+  border: 1px solid #e2e9f3 !important;
+  box-shadow: 0 12px 32px rgba(38, 62, 98, .055) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+.card h1, .card h2, .card h3, .card h4,
+.pro-card h1, .pro-card h2, .pro-card h3, .page-heading,
+.student-password-card-title { color: #1e3048 !important; }
+.card p, .card small, .pro-card p, .pro-sub, .student-pro-sub,
+.empty-state, .stat-card .label, .tt-stat-note { color: #73839a !important; }
+.stat-card, .pro-stat, .preview-grid>div, .hub-card .stat-card {
+  color: #253750 !important;
+  background: linear-gradient(145deg, #ffffff, #f6f9fe) !important;
+  border: 1px solid #e2eaf4 !important;
+  box-shadow: 0 5px 18px rgba(35, 62, 99, .035) !important;
+}
+.stat-card .value, .pro-stat strong, .pro-stat .value { color: #187db7 !important; }
+
+/* Sidebar / navigation */
+.cr-sidebar, .student-shell aside, .student-sidebar {
+  color: #34465f !important;
+  background: rgba(255,255,255,.94) !important;
+  border-color: #e2e9f3 !important;
+  box-shadow: 8px 0 30px rgba(32, 58, 94, .035) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+.cr-sidebar a, .student-shell aside a, .student-sidebar a { color: #667790 !important; }
+.cr-sidebar a:hover, .student-shell aside a:hover, .student-sidebar a:hover {
+  color: #176da5 !important; background: #eff7ff !important;
+}
+.cr-sidebar nav a.active, .student-shell aside a.active, .student-sidebar a.active {
+  color: #176da5 !important;
+  background: linear-gradient(110deg, #e6f4ff, #f0efff) !important;
+  border-color: #d6e9fa !important;
+  box-shadow: inset 0 1px 0 #fff !important;
+}
+.cr-sidebar-brand, .student-pro-brand { color: #20334d !important; }
+.cr-sidebar small, .cr-side-label, .cr-sidebar-bottom { color: #8391a5 !important; }
+
+/* Inputs and data tables */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea,
+.input-shell, .input-icon, .inline-form input, .pro-form input, .pro-form select,
+.pro-form textarea, .form-two input, .form-two select, .form-two textarea {
+  color: #263850 !important;
+  background: #fff !important;
+  border-color: #d9e3ef !important;
+}
+input::placeholder, textarea::placeholder { color: #9aa8ba !important; }
+input:focus, select:focus, textarea:focus {
+  border-color: #70bde7 !important;
+  box-shadow: 0 0 0 3px rgba(63, 164, 220, .12) !important;
+  outline: none !important;
+}
+.table-wrap { background: #fff !important; border: 1px solid #e2e9f3 !important; border-radius: 14px !important; overflow-x: auto; }
+table { color: #34465f !important; }
+thead, th { color: #5f718a !important; background: #f5f8fd !important; border-color: #e4ebf4 !important; }
+td, tr { border-color: #e9eef5 !important; }
+tbody tr:hover { background: #f7fbff !important; }
+
+/* Buttons: one consistent blue action, quiet secondary controls */
+.btn-primary, .auth-submit, .student-password-submit {
+  color: #fff !important;
+  background: linear-gradient(135deg, #238ac5, #416bd8) !important;
+  border: 1px solid rgba(255,255,255,.55) !important;
+  box-shadow: 0 8px 20px rgba(45, 117, 190, .18) !important;
+}
+.btn-primary:hover, .auth-submit:hover:not(:disabled), .student-password-submit:hover { filter: brightness(1.04) !important; }
+.btn-secondary, .logout-btn, .student-pro-logout {
+  color: #52657e !important;
+  background: #f7f9fd !important;
+  border: 1px solid #dfe7f1 !important;
+}
+.btn-secondary:hover, .logout-btn:hover, .student-pro-logout:hover { color: #1b6da5 !important; background: #edf6ff !important; }
+.btn-danger { color: #b63850 !important; background: #fff0f2 !important; border: 1px solid #f7d4dc !important; }
+.badge-present, .status-approved { color: #13764f !important; background: #e5f7ee !important; }
+.badge-absent, .status-rejected { color: #b63850 !important; background: #fff0f2 !important; }
+.badge-late, .badge-leave, .status-pending { color: #92631a !important; background: #fff6df !important; }
+
+/* CR and student app backgrounds */
+.cr-app, .cr-main, .student-shell, .pro-page, .student-password-page,
+.smart-assistant-page, .assistant-layout, .tt-layout, .settings-layout {
+  color: #263850 !important;
+  background: transparent !important;
+}
+.cr-main { min-width: 0; }
+.page, .pro-page { color: #263850 !important; }
+.page-heading, .pro-page h1, .pro-page h2 { color: #1d3049 !important; }
+.cr-command-dialog, .cr-command-search, .cr-command-results {
+  color: #263850 !important; background: #fff !important; border-color: #e0e8f2 !important;
+}
+.cr-command-item { color: #536780 !important; }
+.cr-command-item:hover { background: #edf6ff !important; color: #176da5 !important; }
+
+/* Login: calmer premium blue for students, restrained violet for CR */
+.auth-page {
+  color: #23344c !important;
+  background:
+    radial-gradient(ellipse at 7% 5%, rgba(102, 196, 239, .23), transparent 36%),
+    radial-gradient(ellipse at 95% 90%, rgba(160, 151, 242, .20), transparent 38%),
+    linear-gradient(135deg, #f7faff 0%, #f1f6fc 52%, #f7f7ff 100%) !important;
+}
+.auth-layout { border-color: rgba(255,255,255,.95) !important; background: rgba(255,255,255,.83) !important; box-shadow: 0 30px 90px rgba(43,70,112,.13), inset 0 1px #fff !important; }
+.auth-visual { background: linear-gradient(145deg, #e5f5ff 0%, #eaf1ff 58%, #f0f1ff 100%) !important; }
+.auth-cr .auth-visual { background: linear-gradient(145deg, #f0eaff 0%, #edf0ff 58%, #e7f6ff 100%) !important; }
+.auth-card-wrap { background: rgba(255,255,255,.48) !important; }
+.auth-card { background: rgba(255,255,255,.94) !important; border-color: #e7edf6 !important; box-shadow: 0 18px 45px rgba(36,62,100,.055) !important; }
+.auth-heading h1 { color: #20334c !important; }
+.auth-heading p { color: #71829a !important; }
+.auth-role-switch { background: #f2f6fc !important; border-color: #e1e9f4 !important; }
+.auth-role-switch button.active { background: linear-gradient(135deg, #e2f5ff, #edf2ff) !important; border-color: #bcdff3 !important; color: #1d5e88 !important; }
+.auth-cr .auth-role-switch button.active { background: linear-gradient(135deg, #f0eaff, #eaf2ff) !important; border-color: #d6cafa !important; color: #6546a5 !important; }
+.auth-input input { background: #fff !important; border-color: #dbe5f0 !important; color: #263850 !important; }
+.auth-submit { background: linear-gradient(115deg, #218fc8, #426bd7) !important; }
+.auth-cr .auth-submit { background: linear-gradient(115deg, #8970d8, #5e7fda) !important; }
+.auth-security b { color: #435772 !important; }
+.auth-security p { color: #8290a5 !important; }
+.auth-foot { color: #8b99ac !important; }
+
+@media (max-width: 700px) {
+  .card, .pro-card, .hub-card, .chart-card { border-radius: 16px !important; }
+  .topbar, .student-pro-topbar, .cr-mainbar { padding-left: 12px !important; padding-right: 12px !important; }
+}
+
