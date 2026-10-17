@@ -55,6 +55,7 @@ table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
 th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
 th{color:var(--muted);font-weight:500;font-size:13px}
 .empty{color:var(--muted);text-align:center;padding:20px}
+@media print{*{color:#000!important;background:#fff!important}nav,.noprint,.who,button{display:none!important}.card,.stat{border:1px solid #999!important}.scroll{overflow:visible}table{min-width:0}.tag{border:1px solid #999}}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;font-size:14px;max-width:90%}
 #toast.show{opacity:1}
 </style>
@@ -67,7 +68,7 @@ th{color:var(--muted);font-weight:500;font-size:13px}
 </div>
 <div id="toast"></div>
 <script>
-var me=null,cfg={maint:false,message:""},tab="Home",adate=today(),mode="login",seq=0;
+var me=null,cfg={maint:false,message:""},tab="Home",adate=today(),mode="login",seq=0,asub=null,rfrom=today().slice(0,8)+"01",rto=today(),rsub="",lastRep=null;
 function $(i){return document.getElementById(i)}
 function val(i){var x=$(i);return x?x.value.trim():""}
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -118,23 +119,68 @@ async function assignments(){
   });
   return h;
 }
+function subjectsCard(list){
+  return '<div class="card"><h3>Subjects</h3><div style="margin:8px 0">'+(list.length?list.map(function(x){return '<span class="tag">'+esc(x.name)+' <button class="btn ghost sm danger" style="padding:0 6px" data-act="delsub" data-id="'+x.id+'" data-n="'+esc(x.name)+'" title="Delete subject">×</button></span>'}).join(" "):'<span class="meta">No subjects yet.</span>')+'</div><div class="row" style="flex-wrap:nowrap"><input class="field" id="ns" placeholder="New subject (e.g. Mathematics)" style="margin:0"><button class="btn" data-act="addsub">Add</button></div></div>';
+}
+function subOpts(list,sel,all){return (all?'<option value="">All subjects</option>':'')+list.map(function(x){return '<option value="'+x.id+'"'+(String(x.id)===String(sel)?' selected':'')+'>'+esc(x.name)+'</option>'}).join("")}
 async function attendance(){
   var h="";
   if(me.role!=="cr"){
     var m=await api("GET","/attendance/me");
-    h+='<div class="stats"><div class="stat"><span class="meta">My attendance</span><b>'+(m.pct===null?"–":m.pct+"%")+'</b></div></div>';
+    h+='<div class="stats"><div class="stat"><span class="meta">Overall attendance</span><b>'+(m.pct===null?"–":m.pct+"%")+'</b></div></div>';
     if(!m.records.length)return h+'<div class="empty">No attendance recorded for you yet.</div>';
-    m.records.forEach(function(r){h+='<div class="card row"><span>'+r.date+'</span>'+sTag(r.status)+'</div>'});
+    h+='<h2 class="h2">By subject</h2>';
+    m.by_subject.forEach(function(x){h+='<div class="card row"><div><h3>'+esc(x.name)+'</h3><span class="meta">Present '+x.present+' · Late '+x.late+' · Absent '+x.absent+'</span></div>'+pTag(x.pct)+'</div>'});
+    h+='<h2 class="h2">Recent records</h2>';
+    m.records.slice(0,60).forEach(function(r){h+='<div class="card row"><span>'+r.date+' · '+esc(r.subject)+'</span>'+sTag(r.status)+'</div>'});
     return h+'<p class="meta">Late counts as attended. Below 75% is highlighted.</p>';
   }
-  var d=await api("GET","/attendance?date="+adate),c={P:0,A:0,L:0};
+  var d=await api("GET","/attendance?date="+adate+(asub?"&subject_id="+asub:""));
+  asub=d.subject_id;
+  h+=subjectsCard(d.subjects);
+  if(!d.subjects.length)return h+'<div class="empty">Add your first subject above to start marking attendance.</div>';
+  var c={P:0,A:0,L:0};
   d.students.forEach(function(s){if(d.marks[s.id])c[d.marks[s.id]]++});
-  h+='<div class="card row"><h3 style="margin:0">Date</h3><input type="date" id="adate" class="field" style="width:auto;margin:0" value="'+adate+'" max="'+today()+'"></div>';
+  h+='<div class="card row"><div><span class="meta">Subject</span><br><select id="asub" class="field" style="margin:0;width:auto;min-width:160px">'+subOpts(d.subjects,asub)+'</select></div><div><span class="meta">Date</span><br><input type="date" id="adate" class="field" style="width:auto;margin:0" value="'+adate+'" max="'+today()+'"></div></div>';
   h+='<div class="stats"><div class="stat"><span class="meta">Present</span><b>'+c.P+'</b></div><div class="stat"><span class="meta">Absent</span><b>'+c.A+'</b></div><div class="stat"><span class="meta">Late</span><b>'+c.L+'</b></div></div>';
   if(!d.students.length)return h+'<div class="empty">No students yet. Students can sign up, or add them in the Students tab.</div>';
   h+='<button class="btn ghost" data-act="allp" style="margin-bottom:10px">Mark all present</button>';
   d.students.forEach(function(s){h+='<div class="card row"><div><h3>'+esc(s.name)+'</h3><span class="meta">Roll '+esc(s.roll||"–")+'</span></div><div class="seg">'+["P","A","L"].map(function(v){return '<button data-act="mark" data-sid="'+s.id+'" data-v="'+v+'" class="'+(d.marks[s.id]===v?'on-'+v:'')+'">'+({P:"Present",A:"Absent",L:"Late"})[v]+'</button>'}).join("")+'</div></div>'});
   return h;
+}
+async function report(){
+  var subs=await api("GET","/subjects");
+  var r=await api("GET","/reports?from="+rfrom+"&to="+rto+(rsub?"&subject_id="+rsub:""));
+  lastRep=r;
+  var h='<div class="card noprint"><h3>Attendance report</h3><div class="row" style="align-items:flex-end;margin-top:8px"><div><span class="meta">Subject</span><br><select id="rs" class="field" style="margin:0;width:auto;min-width:150px">'+subOpts(subs,rsub,true)+'</select></div><div><span class="meta">From</span><br><input type="date" id="rf" class="field" style="margin:0;width:auto" value="'+r.from+'" max="'+today()+'"></div><div><span class="meta">To</span><br><input type="date" id="rt" class="field" style="margin:0;width:auto" value="'+r.to+'" max="'+today()+'"></div><button class="btn" data-act="genrep">Generate</button></div></div>';
+  if(!subs.length)return h+'<div class="empty">Add subjects and mark attendance first (Attendance tab).</div>';
+  var sn=r.subject_id?(r.subjects[0]?r.subjects[0].name:""):"All subjects";
+  h+='<div class="meta" style="margin-bottom:10px">Class attendance report · '+esc(sn)+' · '+r.from+' to '+r.to+'</div>';
+  h+='<div class="stats">'+r.subjects.map(function(x){return '<div class="stat"><span class="meta">'+esc(x.name)+'</span><b>'+(x.avg_pct===null?"–":x.avg_pct+"%")+'</b><span class="meta">'+x.classes+(x.classes===1?' class':' classes')+' held</span></div>'}).join("")+'</div>';
+  if(!r.students.length)return h+'<div class="empty">No students yet.</div>';
+  var one=r.subjects.length===1;
+  h+='<div class="card scroll"><table><thead><tr><th>Roll</th><th>Name</th>'+(one?'<th>Present</th><th>Late</th><th>Absent</th><th>Attendance</th>':r.subjects.map(function(x){return '<th>'+esc(x.name)+'</th>'}).join("")+'<th>Overall</th>')+'</tr></thead><tbody>';
+  r.students.forEach(function(st){
+    var row='<tr><td>'+esc(st.roll||"–")+'</td><td>'+esc(st.name)+'</td>';
+    if(one){var t=st.total;row+='<td>'+t.p+'</td><td>'+t.l+'</td><td>'+t.a+'</td><td>'+pTag(t.pct)+'</td>'}
+    else{r.subjects.forEach(function(x){var y=st.by[x.id];row+='<td>'+(y?pTag(y.pct):'<span class="meta">–</span>')+'</td>'});row+='<td>'+pTag(st.total.pct)+'</td>'}
+    h+=row+'</tr>';
+  });
+  h+='</tbody></table></div><div class="row noprint" style="justify-content:flex-start;margin-top:10px"><button class="btn ghost" data-act="csv">Download CSV</button><button class="btn ghost" data-act="print">Print / Save as PDF</button></div><p class="meta">Late counts as attended. Below 75% is highlighted.</p>';
+  return h;
+}
+function csvCell(v){if(typeof v==="string"&&/^[=+\-@\t\r]/.test(v))v="'"+v;v=String(v==null?"":v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function makeCsv(r){
+  var head=["Roll","Name"];
+  r.subjects.forEach(function(x){head.push(x.name+" Present",x.name+" Late",x.name+" Absent",x.name+" %")});
+  head.push("Total Present","Total Late","Total Absent","Overall %");
+  var rows=[head].concat(r.students.map(function(st){
+    var row=[st.roll,st.name];
+    r.subjects.forEach(function(x){var y=st.by[x.id]||{p:0,l:0,a:0,pct:null};row.push(y.p,y.l,y.a,y.pct===null?"":y.pct)});
+    row.push(st.total.p,st.total.l,st.total.a,st.total.pct===null?"":st.total.pct);
+    return row;
+  }));
+  return rows.map(function(r){return r.map(csvCell).join(",")}).join("\r\n");
 }
 async function students(){
   var r=await api("GET","/students");
@@ -153,13 +199,13 @@ async function account(){
   h+='<div class="card"><h3>Change password</h3><input class="field" id="cp" type="password" placeholder="Current password" autocomplete="current-password"><input class="field" id="np" type="password" placeholder="New password (6+ characters)" autocomplete="new-password"><button class="btn ghost" data-act="chpw">Update password</button></div><button class="btn ghost" data-act="logout">Log out</button>';
   return h;
 }
-var VIEWS={Home:home,Assignments:assignments,Attendance:attendance,Students:students,Account:account};
+var VIEWS={Home:home,Assignments:assignments,Attendance:attendance,Report:report,Students:students,Account:account};
 async function render(){
   var my=++seq,v=$("view"),tb=$("tabs");
   $("who").innerHTML=me?esc(me.name)+'<br>'+(me.role==="cr"?"CR / teacher":"Student"):"";
   if(!me){tb.innerHTML="";v.innerHTML=authView();return}
   if(me.role!=="cr"&&cfg.maint){tb.innerHTML="";v.innerHTML=maintView();return}
-  var tabs=["Home","Assignments","Attendance"].concat(me.role==="cr"?["Students"]:[],["Account"]);
+  var tabs=["Home","Assignments","Attendance"].concat(me.role==="cr"?["Report","Students"]:[],["Account"]);
   if(tabs.indexOf(tab)<0)tab="Home";
   tb.innerHTML=tabs.map(function(t){return '<button role="tab" data-act="tab" data-t="'+t+'" aria-selected="'+(t===tab)+'">'+t+'</button>'}).join("");
   try{var h=await VIEWS[tab]();if(my!==seq)return;v.innerHTML=(cfg.maint?'<div class="banner">Maintenance mode is ON. Students currently see the maintenance screen.</div>':'')+h}
@@ -187,8 +233,13 @@ document.addEventListener("click",function(e){
     if(a==="delann"){await api("DELETE","/announcements/"+id);return render()}
     if(a==="postasg"){if(!val("gt"))return toast("Add a title");await api("POST","/assignments",{title:val("gt"),subject:val("gs"),due:val("gd")});return render()}
     if(a==="delasg"){if(!confirm("Delete this assignment?"))return;await api("DELETE","/assignments/"+id);return render()}
-    if(a==="mark"){await api("PUT","/attendance",{date:adate,marks:(function(){var o={};o[b.dataset.sid]=b.dataset.v;return o})()});return render()}
-    if(a==="allp"){var d=await api("GET","/attendance?date="+adate),o={};d.students.forEach(function(s){o[s.id]="P"});await api("PUT","/attendance",{date:adate,marks:o});return render()}
+    if(a==="mark"){await api("PUT","/attendance",{date:adate,subject_id:asub,marks:(function(){var o={};o[b.dataset.sid]=b.dataset.v;return o})()});return render()}
+    if(a==="allp"){var d=await api("GET","/attendance?date="+adate+"&subject_id="+asub),o={};d.students.forEach(function(s){o[s.id]="P"});await api("PUT","/attendance",{date:adate,subject_id:asub,marks:o});return render()}
+    if(a==="addsub"){var n=val("ns");if(!n)return toast("Enter a subject name");var rs=await api("POST","/subjects",{name:n});asub=rs.id;return render()}
+    if(a==="delsub"){if(!confirm("Delete "+b.dataset.n+" and all its attendance records?"))return;await api("DELETE","/subjects/"+id);if(String(asub)===String(id))asub=null;if(String(rsub)===String(id))rsub="";return render()}
+    if(a==="genrep"){var f=val("rf"),t=val("rt");if(f&&t&&f>t)return toast("Start date must be before end date");rfrom=f||rfrom;rto=t||rto;rsub=val("rs");return render()}
+    if(a==="csv"){if(!lastRep)return;var u=URL.createObjectURL(new Blob(["\ufeff"+makeCsv(lastRep)],{type:"text/csv;charset=utf-8"})),l=document.createElement("a");l.href=u;l.download="attendance-"+lastRep.from+"-to-"+lastRep.to+".csv";document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u)},2000);return}
+    if(a==="print"){window.print();return}
     if(a==="addstu"){await api("POST","/students",{name:val("sn"),roll:val("sr"),username:val("su"),password:$("sp").value,role:val("sl")});toast("Account added");return render()}
     if(a==="resetpw"){var pw=prompt("New password for "+b.dataset.n+" (6+ characters):");if(!pw)return;await api("POST","/students/"+id+"/password",{password:pw});return toast("Password updated")}
     if(a==="delstu"){if(!confirm("Remove "+b.dataset.n+" and all their records?"))return;await api("DELETE","/students/"+id);return render()}
@@ -197,7 +248,10 @@ document.addEventListener("click",function(e){
     if(a==="chpw"){await api("POST","/me/password",{current:$("cp").value,password:$("np").value});$("cp").value="";$("np").value="";return toast("Password updated")}
   });
 });
-document.addEventListener("change",function(e){if(e.target.id==="adate"&&e.target.value){adate=e.target.value;render()}});
+document.addEventListener("change",function(e){
+  if(e.target.id==="adate"&&e.target.value){adate=e.target.value;render()}
+  else if(e.target.id==="asub"){asub=e.target.value;render()}
+});
 document.addEventListener("keydown",function(e){
   if(e.key!=="Enter"||e.target.tagName!=="INPUT")return;
   var c=e.target.closest(".card"),b=c&&c.querySelector('.btn:not(.ghost):not(.sm):not([data-act="mode"])[data-act]');

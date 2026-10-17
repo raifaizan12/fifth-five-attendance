@@ -31,14 +31,23 @@ CREATE TABLE IF NOT EXISTS completions(
   assignment_id INT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
   PRIMARY KEY(user_id, assignment_id)
 );
+CREATE TABLE IF NOT EXISTS subjects(id SERIAL PRIMARY KEY, name TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS subjects_name_lower ON subjects(lower(name));
 CREATE TABLE IF NOT EXISTS attendance(
   date TEXT NOT NULL,
+  subject_id INT REFERENCES subjects(id) ON DELETE CASCADE,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  status TEXT NOT NULL CHECK(status IN ('P','A','L')),
-  PRIMARY KEY(date, user_id)
+  status TEXT NOT NULL CHECK(status IN ('P','A','L'))
 );
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS subject_id INT REFERENCES subjects(id) ON DELETE CASCADE;
 CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS throttle(key TEXT PRIMARY KEY, n INT NOT NULL, t DOUBLE PRECISION NOT NULL);
+`;
+const SCHEMA2 = `
+ALTER TABLE attendance DROP CONSTRAINT IF EXISTS attendance_pkey;
+ALTER TABLE attendance ALTER COLUMN subject_id SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS attendance_uniq ON attendance(date, subject_id, user_id);
+CREATE INDEX IF NOT EXISTS attendance_subject ON attendance(subject_id, date);
 `;
 const DEFAULT_MSG = "The portal is being updated. Please check back soon.";
 
@@ -46,6 +55,12 @@ let ready = null, configError = "";
 function init() {
   if (!ready) ready = (async () => {
     await exec(SCHEMA);
+    // migrate older single-subject attendance into a "General" subject
+    if (await one("SELECT 1 AS x FROM attendance WHERE subject_id IS NULL LIMIT 1")) {
+      await q("INSERT INTO subjects(name,created_at) VALUES('General',$1) ON CONFLICT DO NOTHING", [Date.now()]);
+      await q("UPDATE attendance SET subject_id=(SELECT id FROM subjects WHERE lower(name)='general') WHERE subject_id IS NULL");
+    }
+    if (!(await one("SELECT to_regclass('public.attendance_uniq') AS r")).r) await exec(SCHEMA2);
     const hasCR = await one("SELECT 1 AS x FROM users WHERE role='cr' LIMIT 1");
     if (!hasCR) {
       const pw = process.env.ADMIN_PASSWORD;
@@ -240,34 +255,86 @@ app.delete("/api/students/:id", needCR, A(async (req, res) => {
   res.status(r ? 200 : 404).json(r ? { ok: true } : { error: "Student not found" });
 }));
 
-// ---------- attendance ----------
+// ---------- subjects ----------
+const listSubjects = () => q("SELECT id,name FROM subjects ORDER BY lower(name)");
+app.get("/api/subjects", need, A(async (req, res) => res.json(await listSubjects())));
+app.post("/api/subjects", needCR, A(async (req, res) => {
+  const name = clean(req.body.name, 60);
+  if (!name) return res.status(400).json({ error: "Enter a subject name" });
+  const r = await one("INSERT INTO subjects(name,created_at) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING id", [name, Date.now()]);
+  if (!r) return res.status(409).json({ error: "That subject already exists" });
+  res.json({ id: r.id });
+}));
+app.delete("/api/subjects/:id", needCR, A(async (req, res) => { const id = intId(req.params.id); if (id) await q("DELETE FROM subjects WHERE id=$1", [id]); res.json({ ok: true }); }));
+
+// ---------- attendance (per subject) ----------
 app.get("/api/attendance", needCR, A(async (req, res) => {
   const date = validDate(req.query.date) ? req.query.date : today();
+  const subjects = await listSubjects();
+  let sid = intId(req.query.subject_id);
+  if (!sid || !subjects.some((s) => s.id === sid)) sid = subjects.length ? subjects[0].id : null;
   const marks = {};
-  (await q("SELECT user_id,status FROM attendance WHERE date=$1", [date])).forEach((r) => { marks[r.user_id] = r.status; });
+  if (sid) (await q("SELECT user_id,status FROM attendance WHERE date=$1 AND subject_id=$2", [date, sid])).forEach((r) => { marks[r.user_id] = r.status; });
   const students = await q("SELECT id,name,roll FROM users WHERE role='student'");
-  res.json({ date, students: students.sort(byRoll), marks });
+  res.json({ date, subjects, subject_id: sid, students: students.sort(byRoll), marks });
 }));
 app.put("/api/attendance", needCR, A(async (req, res) => {
-  const date = clean(req.body.date, 10), marks = req.body.marks;
+  const date = clean(req.body.date, 10), marks = req.body.marks, sid = intId(req.body.subject_id);
   if (!validDate(date)) return res.status(400).json({ error: "Invalid date" });
   if (date > today()) return res.status(400).json({ error: "Cannot mark a future date" });
+  if (!sid || !(await one("SELECT 1 AS x FROM subjects WHERE id=$1", [sid]))) return res.status(400).json({ error: "Choose a subject first" });
   if (!marks || typeof marks !== "object") return res.status(400).json({ error: "Invalid marks" });
   const ups = [], dels = [];
   for (const [k, st] of Object.entries(marks)) {
     const id = intId(k); if (!id) continue;
     if (st === "P" || st === "A" || st === "L") ups.push([id, st]); else if (st === "" || st === null) dels.push(id);
   }
-  if (ups.length) await q(`INSERT INTO attendance(date,user_id,status)
-    SELECT $1, x.uid, x.st FROM unnest($2::int[], $3::text[]) AS x(uid,st) JOIN users u ON u.id=x.uid AND u.role='student'
-    ON CONFLICT(date,user_id) DO UPDATE SET status=excluded.status`, [date, ups.map((u) => u[0]), ups.map((u) => u[1])]);
-  if (dels.length) await q("DELETE FROM attendance WHERE date=$1 AND user_id = ANY($2::int[])", [date, dels]);
+  if (ups.length) await q(`INSERT INTO attendance(date,subject_id,user_id,status)
+    SELECT $1, $2, x.uid, x.st FROM unnest($3::int[], $4::text[]) AS x(uid,st) JOIN users u ON u.id=x.uid AND u.role='student'
+    ON CONFLICT(date,subject_id,user_id) DO UPDATE SET status=excluded.status`, [date, sid, ups.map((u) => u[0]), ups.map((u) => u[1])]);
+  if (dels.length) await q("DELETE FROM attendance WHERE date=$1 AND subject_id=$2 AND user_id = ANY($3::int[])", [date, sid, dels]);
   res.json({ ok: true });
 }));
+const pctOf = (p, l, a) => { const t = p + l + a; return t ? Math.round((p + l) / t * 100) : null; };
 app.get("/api/attendance/me", need, A(async (req, res) => {
-  const records = await q("SELECT date,status FROM attendance WHERE user_id=$1 ORDER BY date DESC LIMIT 400", [req.user.id]);
-  const t = records.length, p = records.filter((r) => r.status !== "A").length;
-  res.json({ records, pct: t ? Math.round(p / t * 100) : null });
+  const records = await q("SELECT a.date,a.status,a.subject_id,s.name AS subject FROM attendance a JOIN subjects s ON s.id=a.subject_id WHERE a.user_id=$1 ORDER BY a.date DESC, lower(s.name) LIMIT 400", [req.user.id]);
+  const rows = await q(`SELECT s.id,s.name,
+    COUNT(*) FILTER (WHERE a.status='P')::int AS present, COUNT(*) FILTER (WHERE a.status='L')::int AS late, COUNT(*) FILTER (WHERE a.status='A')::int AS absent
+    FROM attendance a JOIN subjects s ON s.id=a.subject_id WHERE a.user_id=$1 GROUP BY s.id,s.name ORDER BY lower(s.name)`, [req.user.id]);
+  const by = rows.map((r) => ({ ...r, pct: pctOf(r.present, r.late, r.absent) }));
+  const tot = by.reduce((x, r) => ({ p: x.p + r.present, l: x.l + r.late, a: x.a + r.absent }), { p: 0, l: 0, a: 0 });
+  res.json({ records, by_subject: by, pct: pctOf(tot.p, tot.l, tot.a) });
+}));
+
+// ---------- reports (CR) ----------
+app.get("/api/reports", needCR, A(async (req, res) => {
+  const to = validDate(req.query.to) ? req.query.to : today();
+  const from = validDate(req.query.from) ? req.query.from : to.slice(0, 8) + "01";
+  if (from > to) return res.status(400).json({ error: "The start date must be before the end date" });
+  const sid = intId(req.query.subject_id);
+  const subjects = (await listSubjects()).filter((s) => !sid || s.id === sid);
+  const params = [from, to]; let w = "date>=$1 AND date<=$2";
+  if (sid) { params.push(sid); w += " AND subject_id=$3"; }
+  const agg = await q(`SELECT user_id,subject_id,
+    COUNT(*) FILTER (WHERE status='P')::int AS p, COUNT(*) FILTER (WHERE status='L')::int AS l, COUNT(*) FILTER (WHERE status='A')::int AS a
+    FROM attendance WHERE ${w} GROUP BY user_id,subject_id`, params);
+  const held = await q(`SELECT subject_id, COUNT(DISTINCT date)::int AS c FROM attendance WHERE ${w} GROUP BY subject_id`, params);
+  const students = (await q("SELECT id,name,roll FROM users WHERE role='student'")).sort(byRoll);
+  const byStu = {}, bySub = {};
+  agg.forEach((r) => {
+    (byStu[r.user_id] = byStu[r.user_id] || {})[r.subject_id] = r;
+    const x = bySub[r.subject_id] = bySub[r.subject_id] || { p: 0, l: 0, a: 0 }; x.p += r.p; x.l += r.l; x.a += r.a;
+  });
+  const heldMap = Object.fromEntries(held.map((h) => [h.subject_id, h.c]));
+  res.json({
+    from, to, subject_id: sid,
+    subjects: subjects.map((s) => { const x = bySub[s.id] || { p: 0, l: 0, a: 0 }; return { id: s.id, name: s.name, classes: heldMap[s.id] || 0, avg_pct: pctOf(x.p, x.l, x.a) }; }),
+    students: students.map((st) => {
+      const by = {}, tot = { p: 0, l: 0, a: 0 };
+      subjects.forEach((sub) => { const r = (byStu[st.id] || {})[sub.id]; if (r) { by[sub.id] = { p: r.p, l: r.l, a: r.a, pct: pctOf(r.p, r.l, r.a) }; tot.p += r.p; tot.l += r.l; tot.a += r.a; } });
+      return { id: st.id, name: st.name, roll: st.roll, by, total: { ...tot, pct: pctOf(tot.p, tot.l, tot.a) } };
+    })
+  });
 }));
 
 app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));

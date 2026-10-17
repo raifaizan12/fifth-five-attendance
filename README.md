@@ -1,6 +1,7 @@
 # Class Portal (Vercel + Neon Postgres)
 
-CR/teacher login, student login, attendance, assignments, announcements and maintenance mode.
+CR/teacher login, student login, **subject-wise attendance with reports (CSV / print to PDF)**, assignments,
+announcements and maintenance mode.
 Backend: Express as a Vercel serverless function (`api/index.js`). Database: Neon Postgres.
 Frontend: `public/index.html` (no build step).
 
@@ -28,3 +29,10 @@ node server.js
   change an existing account; it is only used when no CR exists.
 - The CR can add more CR accounts in the Students tab.
 - Database data lives in Neon, so redeploys never erase it.
+
+## Subjects and reports
+- CR: Attendance tab -> add subjects (Mathematics, Physics...), pick subject + date, mark Present/Absent/Late.
+- CR: Report tab -> choose subject (or all), date range, Generate. Download CSV (opens in Excel) or
+  Print / Save as PDF. Below 75% is highlighted.
+- Students see their attendance per subject and overall.
+- Upgrading an older install: existing attendance is moved automatically into a subject called "General".

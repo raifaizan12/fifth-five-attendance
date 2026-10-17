@@ -4,8 +4,9 @@ let run, execAll;
 if (process.env.PGLITE === "1") {
   const { PGlite } = require("@electric-sql/pglite");
   const pg = new PGlite();
-  run = async (t, p) => (await pg.query(t, p || [])).rows;
-  execAll = (s) => pg.exec(s);
+  const pre = process.env.PGLITE_PRESQL ? pg.exec(require("fs").readFileSync(process.env.PGLITE_PRESQL, "utf8")) : Promise.resolve(); // test-only
+  run = async (t, p) => { await pre; return (await pg.query(t, p || [])).rows; };
+  execAll = async (s) => { await pre; return pg.exec(s); };
 } else {
   const { Pool, types } = require("pg");
   types.setTypeParser(20, (v) => parseInt(v, 10)); // int8 -> number
