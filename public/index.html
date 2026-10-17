@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f5d50">
+<title>Class Portal</title>
+<style>
+:root{--bg:#f6f5f1;--surface:#fff;--text:#1d1d1b;--muted:#6b6a64;--line:#e4e2da;--accent:#2f5d50;--accent-soft:#e1ede8;--warn:#b4531a;--warn-soft:#fbeadd;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#151716;--surface:#202321;--text:#ecebe5;--muted:#9b9a92;--line:#33372f;--accent:#7fc4ae;--accent-soft:#25362f;--warn:#f0a070;--warn-soft:#3b2a1e;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font:600 26px/1.2 Georgia,"Times New Roman",serif;margin:0}
+.h2{font-size:18px;margin:18px 0 10px}
+.meta{color:var(--muted);font-size:13px}
+.who{font-size:14px;color:var(--muted);text-align:right}
+nav{display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:18px}
+nav:empty{display:none}
+nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-size:15px;padding:10px 12px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.card h3{margin:0 0 2px;font-size:16px}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-right:6px}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.late{background:#f5ecc8;color:#7a5f00}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font-size:24px;font-family:Georgia,serif}
+.task{display:flex;gap:12px;align-items:flex-start}
+.task input{width:20px;height:20px;margin-top:3px;accent-color:var(--accent)}
+.task.done h3{text-decoration:line-through;color:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.seg{display:flex;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+.seg button.on-P{background:var(--accent);color:#fff;border-color:var(--accent)}
+.seg button.on-A{background:var(--warn);color:#fff;border-color:var(--warn)}
+.seg button.on-L{background:#c9a227;color:#222;border-color:#c9a227}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
+.btn.ghost{background:none;color:var(--accent);border:1px solid var(--accent)}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn.danger{color:var(--warn);border-color:var(--warn)}
+.field{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;margin:6px 0 10px}
+.banner{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:14px}
+.maint{text-align:center;padding:40px 16px 20px}
+.maint h2{font:600 24px Georgia,serif;margin:12px 0 6px}
+.auth{max-width:380px;margin:0 auto}
+.switch{display:flex;gap:6px;margin-bottom:12px}
+.switch button{flex:1}
+.err{color:var(--warn);font-size:14px;margin:0 0 10px;min-height:1px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:500;font-size:13px}
+.empty{color:var(--muted);text-align:center;padding:20px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;font-size:14px;max-width:90%}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>Class Portal</h1><div class="who" id="who"></div></header>
+<nav id="tabs" role="tablist"></nav>
+<main id="view"><div class="empty">Loading…</div></main>
+</div>
+<div id="toast"></div>
+<script>
+var me=null,cfg={maint:false,message:""},tab="Home",adate=today(),mode="login",seq=0;
+function $(i){return document.getElementById(i)}
+function val(i){var x=$(i);return x?x.value.trim():""}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function toast(m){var t=$("toast");t.textContent=m;t.className="show";clearTimeout(toast.t);toast.t=setTimeout(function(){t.className=""},3500)}
+async function api(m,p,b){
+  var r=await fetch("/api"+p,{method:m,credentials:"same-origin",headers:{"Content-Type":"application/json","X-Requested-With":"portal"},body:b?JSON.stringify(b):undefined});
+  var j={};try{j=await r.json()}catch(e){}
+  if(!r.ok){var e=new Error(j.error||("Error "+r.status));e.status=r.status;e.data=j;throw e}
+  return j;
+}
+function fail(e){
+  if(e.status===401){me=null;render();return}
+  if(e.status===503&&e.data&&e.data.error==="maintenance"){cfg.maint=true;cfg.message=e.data.message;if(me&&me.role!=="cr"){render();return}}
+  toast(e.message||"Something went wrong");
+}
+async function act(fn){try{await fn()}catch(e){fail(e)}}
+function pTag(p){return p===null||p===undefined?'<span class="meta">No data</span>':'<span class="tag'+(p<75?' warn':'')+'">'+p+'%</span>'}
+function sTag(s){return s==="P"?'<span class="tag">Present</span>':s==="A"?'<span class="tag warn">Absent</span>':s==="L"?'<span class="tag late">Late</span>':'<span class="meta">Not marked</span>'}
+
+function authView(){
+  var su=mode==="signup";
+  return '<div class="maint"><div style="font-size:44px">🎓</div><h2>'+(su?"Student sign-up":"Welcome back")+'</h2><div class="meta">'+(su?"Create your account with the class code from your CR.":"Log in as a student or as the CR.")+'</div></div>'+
+  '<div class="card auth"><div class="switch"><button class="btn'+(su?' ghost':'')+'" data-act="mode" data-m="login">Log in</button><button class="btn'+(su?'':' ghost')+'" data-act="mode" data-m="signup">Sign up</button></div>'+
+  (su?'<input class="field" id="rn" placeholder="Full name" autocomplete="name"><input class="field" id="rr" placeholder="Roll number"><input class="field" id="rc" placeholder="Class code">':'')+
+  '<input class="field" id="un" placeholder="Username" autocomplete="username" autocapitalize="none"><input class="field" id="pw" type="password" placeholder="Password" autocomplete="'+(su?"new-password":"current-password")+'"><div class="err" id="aerr"></div>'+
+  '<button class="btn" style="width:100%" data-act="'+(su?"signup":"login")+'">'+(su?"Create account":"Log in")+'</button></div>';
+}
+function maintView(){return '<div class="maint"><div style="font-size:44px">🛠️</div><h2>Under maintenance</h2><div class="meta">'+esc(cfg.message)+'</div><p><button class="btn ghost" data-act="logout">Log out</button></p></div>'}
+
+async function home(){
+  var s=await api("GET","/summary"),l=await api("GET","/announcements"),cr=me.role==="cr";
+  var h='<div class="stats">'+(cr?
+    '<div class="stat"><span class="meta">Students</span><b>'+s.students+'</b></div><div class="stat"><span class="meta">Assignments</span><b>'+s.assignments+'</b></div><div class="stat"><span class="meta">Announcements</span><b>'+s.announcements+'</b></div>':
+    '<div class="stat"><span class="meta">Pending assignments</span><b>'+s.pending+'</b></div><div class="stat"><span class="meta">My attendance</span><b>'+(s.pct===null?"–":s.pct+"%")+'</b></div><div class="stat"><span class="meta">Classmates</span><b>'+s.students+'</b></div>')+'</div>';
+  if(cr)h+='<div class="card"><h3>Post an announcement</h3><input class="field" id="at" placeholder="Title"><textarea class="field" id="ab" rows="2" placeholder="Message"></textarea><button class="btn" data-act="postann">Post</button></div>';
+  h+='<h2 class="h2">Announcements</h2>';
+  if(!l.length)h+='<div class="empty">No announcements yet.</div>';
+  l.forEach(function(a){h+='<div class="card"><div class="row"><span class="meta">'+new Date(a.created_at).toLocaleDateString()+'</span>'+(cr?'<button class="btn ghost sm" data-act="delann" data-id="'+a.id+'">Delete</button>':'')+'</div><h3>'+esc(a.title)+'</h3><div class="meta" style="font-size:14px;white-space:pre-wrap">'+esc(a.body)+'</div></div>'});
+  return h;
+}
+async function assignments(){
+  var r=await api("GET","/assignments"),cr=me.role==="cr",h="";
+  if(cr)h+='<div class="card"><h3>New assignment</h3><input class="field" id="gt" placeholder="Title"><input class="field" id="gs" placeholder="Subject"><input class="field" id="gd" type="date"><button class="btn" data-act="postasg">Add assignment</button></div>';
+  if(!r.items.length)h+='<div class="empty">No assignments yet.</div>';
+  r.items.forEach(function(a){
+    h+='<label class="card task'+(a.done&&!cr?' done':'')+'">'+(cr?'':'<input type="checkbox" data-act="tick" data-id="'+a.id+'"'+(a.done?' checked':'')+'>')+'<div style="flex:1"><h3>'+esc(a.title)+'</h3><span class="tag">'+esc(a.subject||"General")+'</span><span class="meta">Due '+esc(a.due||"–")+(cr?' · '+a.done_count+'/'+r.total_students+' done':'')+'</span></div>'+(cr?'<button class="btn ghost sm" data-act="delasg" data-id="'+a.id+'">Delete</button>':'')+'</label>';
+  });
+  return h;
+}
+async function attendance(){
+  var h="";
+  if(me.role!=="cr"){
+    var m=await api("GET","/attendance/me");
+    h+='<div class="stats"><div class="stat"><span class="meta">My attendance</span><b>'+(m.pct===null?"–":m.pct+"%")+'</b></div></div>';
+    if(!m.records.length)return h+'<div class="empty">No attendance recorded for you yet.</div>';
+    m.records.forEach(function(r){h+='<div class="card row"><span>'+r.date+'</span>'+sTag(r.status)+'</div>'});
+    return h+'<p class="meta">Late counts as attended. Below 75% is highlighted.</p>';
+  }
+  var d=await api("GET","/attendance?date="+adate),c={P:0,A:0,L:0};
+  d.students.forEach(function(s){if(d.marks[s.id])c[d.marks[s.id]]++});
+  h+='<div class="card row"><h3 style="margin:0">Date</h3><input type="date" id="adate" class="field" style="width:auto;margin:0" value="'+adate+'" max="'+today()+'"></div>';
+  h+='<div class="stats"><div class="stat"><span class="meta">Present</span><b>'+c.P+'</b></div><div class="stat"><span class="meta">Absent</span><b>'+c.A+'</b></div><div class="stat"><span class="meta">Late</span><b>'+c.L+'</b></div></div>';
+  if(!d.students.length)return h+'<div class="empty">No students yet. Students can sign up, or add them in the Students tab.</div>';
+  h+='<button class="btn ghost" data-act="allp" style="margin-bottom:10px">Mark all present</button>';
+  d.students.forEach(function(s){h+='<div class="card row"><div><h3>'+esc(s.name)+'</h3><span class="meta">Roll '+esc(s.roll||"–")+'</span></div><div class="seg">'+["P","A","L"].map(function(v){return '<button data-act="mark" data-sid="'+s.id+'" data-v="'+v+'" class="'+(d.marks[s.id]===v?'on-'+v:'')+'">'+({P:"Present",A:"Absent",L:"Late"})[v]+'</button>'}).join("")+'</div></div>'});
+  return h;
+}
+async function students(){
+  var r=await api("GET","/students");
+  var h='<div class="card"><h3>Add an account</h3><input class="field" id="sn" placeholder="Full name"><input class="field" id="sr" placeholder="Roll number"><input class="field" id="su" placeholder="Username" autocapitalize="none"><input class="field" id="sp" type="password" placeholder="Password (6+ characters)" autocomplete="new-password"><select class="field" id="sl"><option value="student">Student</option><option value="cr">CR / teacher</option></select><button class="btn" data-act="addstu">Add account</button></div>';
+  if(!r.items.length)return h+'<div class="empty">No students yet.</div>';
+  h+='<div class="card scroll"><table><thead><tr><th>Roll</th><th>Name</th><th>Username</th><th>Attendance</th><th>Done</th><th></th></tr></thead><tbody>';
+  r.items.forEach(function(s){h+='<tr><td>'+esc(s.roll||"–")+'</td><td>'+esc(s.name)+'</td><td>'+esc(s.username)+'</td><td>'+pTag(s.pct)+'</td><td>'+s.done+' / '+r.total_assignments+'</td><td><button class="btn ghost sm" data-act="resetpw" data-id="'+s.id+'" data-n="'+esc(s.name)+'">Reset password</button> <button class="btn ghost sm danger" data-act="delstu" data-id="'+s.id+'" data-n="'+esc(s.name)+'">Remove</button></td></tr>'});
+  return h+'</tbody></table></div>';
+}
+async function account(){
+  var h='<div class="card"><h3>'+esc(me.name)+'</h3><div class="meta">Username: '+esc(me.username)+' · '+(me.role==="cr"?"CR / teacher":"Student"+(me.roll?" · Roll "+esc(me.roll):""))+'</div></div>';
+  if(me.role==="cr"){
+    var s=await api("GET","/settings");cfg=s;
+    h+='<div class="card"><div class="row"><div><h3>Maintenance mode</h3><div class="meta">'+(s.maint?'ON: students see a maintenance screen':'OFF: portal is live')+'</div></div><button class="btn'+(s.maint?' ghost':'')+'" data-act="maint">'+(s.maint?'Turn off':'Turn on')+'</button></div><label class="meta" style="display:block;margin-top:12px">Message shown to students</label><textarea class="field" id="mm" rows="3">'+esc(s.message)+'</textarea><button class="btn ghost" data-act="savemsg">Save message</button></div>';
+  }
+  h+='<div class="card"><h3>Change password</h3><input class="field" id="cp" type="password" placeholder="Current password" autocomplete="current-password"><input class="field" id="np" type="password" placeholder="New password (6+ characters)" autocomplete="new-password"><button class="btn ghost" data-act="chpw">Update password</button></div><button class="btn ghost" data-act="logout">Log out</button>';
+  return h;
+}
+var VIEWS={Home:home,Assignments:assignments,Attendance:attendance,Students:students,Account:account};
+async function render(){
+  var my=++seq,v=$("view"),tb=$("tabs");
+  $("who").innerHTML=me?esc(me.name)+'<br>'+(me.role==="cr"?"CR / teacher":"Student"):"";
+  if(!me){tb.innerHTML="";v.innerHTML=authView();return}
+  if(me.role!=="cr"&&cfg.maint){tb.innerHTML="";v.innerHTML=maintView();return}
+  var tabs=["Home","Assignments","Attendance"].concat(me.role==="cr"?["Students"]:[],["Account"]);
+  if(tabs.indexOf(tab)<0)tab="Home";
+  tb.innerHTML=tabs.map(function(t){return '<button role="tab" data-act="tab" data-t="'+t+'" aria-selected="'+(t===tab)+'">'+t+'</button>'}).join("");
+  try{var h=await VIEWS[tab]();if(my!==seq)return;v.innerHTML=(cfg.maint?'<div class="banner">Maintenance mode is ON. Students currently see the maintenance screen.</div>':'')+h}
+  catch(e){if(my===seq)fail(e)}
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var a=b.dataset.act,id=b.dataset.id;
+  act(async function(){
+    if(a==="tab"){tab=b.dataset.t;return render()}
+    if(a==="mode"){mode=b.dataset.m;return render()}
+    if(a==="login"||a==="signup"){
+      $("aerr").textContent="";
+      try{
+        var r=a==="login"?await api("POST","/login",{username:val("un"),password:$("pw").value}):await api("POST","/register",{name:val("rn"),roll:val("rr"),code:val("rc"),username:val("un"),password:$("pw").value});
+        me=r.user;cfg=r.settings;tab="Home";return render();
+      }catch(er){
+        if(er.status===503&&er.data&&er.data.error==="maintenance"){cfg.maint=true;cfg.message=er.data.message}
+        $("aerr").textContent=er.status===503?"The portal is under maintenance. "+(cfg.message||""):er.message;return;
+      }
+    }
+    if(a==="logout"){await api("POST","/logout",{});me=null;mode="login";return render()}
+    if(a==="tick"){await api("POST","/assignments/"+id+"/done",{done:b.checked});return render()}
+    if(a==="postann"){if(!val("at"))return toast("Add a title");await api("POST","/announcements",{title:val("at"),body:val("ab")});return render()}
+    if(a==="delann"){await api("DELETE","/announcements/"+id);return render()}
+    if(a==="postasg"){if(!val("gt"))return toast("Add a title");await api("POST","/assignments",{title:val("gt"),subject:val("gs"),due:val("gd")});return render()}
+    if(a==="delasg"){if(!confirm("Delete this assignment?"))return;await api("DELETE","/assignments/"+id);return render()}
+    if(a==="mark"){await api("PUT","/attendance",{date:adate,marks:(function(){var o={};o[b.dataset.sid]=b.dataset.v;return o})()});return render()}
+    if(a==="allp"){var d=await api("GET","/attendance?date="+adate),o={};d.students.forEach(function(s){o[s.id]="P"});await api("PUT","/attendance",{date:adate,marks:o});return render()}
+    if(a==="addstu"){await api("POST","/students",{name:val("sn"),roll:val("sr"),username:val("su"),password:$("sp").value,role:val("sl")});toast("Account added");return render()}
+    if(a==="resetpw"){var pw=prompt("New password for "+b.dataset.n+" (6+ characters):");if(!pw)return;await api("POST","/students/"+id+"/password",{password:pw});return toast("Password updated")}
+    if(a==="delstu"){if(!confirm("Remove "+b.dataset.n+" and all their records?"))return;await api("DELETE","/students/"+id);return render()}
+    if(a==="maint"){await api("PUT","/settings",{maint:!cfg.maint});return render()}
+    if(a==="savemsg"){await api("PUT","/settings",{message:val("mm")});return toast("Message saved")}
+    if(a==="chpw"){await api("POST","/me/password",{current:$("cp").value,password:$("np").value});$("cp").value="";$("np").value="";return toast("Password updated")}
+  });
+});
+document.addEventListener("change",function(e){if(e.target.id==="adate"&&e.target.value){adate=e.target.value;render()}});
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"||e.target.tagName!=="INPUT")return;
+  var c=e.target.closest(".card"),b=c&&c.querySelector('.btn:not(.ghost):not(.sm):not([data-act="mode"])[data-act]');
+  if(b)b.click();
+});
+(async function(){try{var r=await api("GET","/me");me=r.user;cfg=r.settings}catch(e){}render()})();
+</script>
+</body>
+</html>
