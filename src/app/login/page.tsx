@@ -39,8 +39,8 @@ export default function LoginPage() {
 
           <div className="auth-visual-main">
             <div className="auth-status"><i /> {isCR ? "CLASS REPRESENTATIVE WORKSPACE" : "STUDENT ACADEMIC HUB"}</div>
-            <h2>{isCR ? "Run your class with confidence." : "Your academic day, beautifully organized."}</h2>
-            <p>{isCR ? "Attendance, schedules, students, QR sessions and class operations — one focused command center." : "Track attendance, classes, alerts, requests and academic progress from one calm workspace."}</p>
+            <h2>{isCR ? "YOUR ALL CLASS RELATED THNGS AVAILABLE"}</h2>
+            <p>{isCR ? "5M CLASS PORTAL"}</p>
 
             <div className="auth-preview">
               <div className="preview-head"><span>Today</span><strong>{isCR ? "CLASS COMMAND CENTER" : "ACADEMIC PULSE"}</strong></div>
@@ -74,7 +74,7 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form">
-              <label>{isCR ? "CR email" : "IUB ID"}<div className="auth-input"><span>{isCR ? "@" : "#"}</span><input value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder={isCR ? "cr@fifthfive.iub.edu.pk" : "Your IUB ID"} required autoCapitalize="none" autoComplete={isCR ? "email" : "username"} /></div></label>
+              <label>{isCR ? "CR email" : "ROLL NO"}<div className="auth-input"><span>{isCR ? "@" : "#"}</span><input value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder={isCR ? "cr@fifthfive.iub.edu.pk" : "Your IUB ID"} required autoCapitalize="none" autoComplete={isCR ? "email" : "username"} /></div></label>
               <label>Password<div className="auth-input"><span>••</span><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required autoComplete="current-password" /></div></label>
               {!isCR && <p className="auth-first-login-note">First time here? Use the initial password provided by your CR (often your registration number), then set a private password from <b>Student Portal → Password</b>.</p>}
             {error && <div className="auth-error"><b>!</b>{error}</div>}
