@@ -36,3 +36,12 @@ node server.js
   Print / Save as PDF. Below 75% is highlighted.
 - Students see their attendance per subject and overall.
 - Upgrading an older install: existing attendance is moved automatically into a subject called "General".
+
+## More sections (all controlled by the CR, shown to students)
+- **Attendance edit:** change or clear any mark, reopen a past session with Edit, or delete a session.
+- **Timetable:** CR builds the weekly timetable; students see it, plus "Today's classes" on Home.
+- **Resources:** CR shares links (notes, videos, PDFs); students open them.
+- **Exams and marks:** CR creates exams and enters marks; each student sees only their own marks and average.
+- **Leave requests:** students request leave; CR approves or rejects with a note; students see the status.
+- **On/off switches:** Account tab (CR) -> "Student portal sections". Turned-off sections disappear for students.
+- New tables are created automatically on the first request after deploy; existing data is kept.

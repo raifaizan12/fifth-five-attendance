@@ -40,6 +40,30 @@ CREATE TABLE IF NOT EXISTS attendance(
   status TEXT NOT NULL CHECK(status IN ('P','A','L'))
 );
 ALTER TABLE attendance ADD COLUMN IF NOT EXISTS subject_id INT REFERENCES subjects(id) ON DELETE CASCADE;
+CREATE TABLE IF NOT EXISTS timetable(
+  id SERIAL PRIMARY KEY, day INT NOT NULL CHECK(day BETWEEN 1 AND 7), t_start TEXT NOT NULL, t_end TEXT NOT NULL,
+  subject_id INT REFERENCES subjects(id) ON DELETE SET NULL,
+  title TEXT NOT NULL DEFAULT '', room TEXT NOT NULL DEFAULT '', teacher TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS resources(
+  id SERIAL PRIMARY KEY, title TEXT NOT NULL, url TEXT NOT NULL,
+  subject_id INT REFERENCES subjects(id) ON DELETE SET NULL, created_at DOUBLE PRECISION NOT NULL
+);
+CREATE TABLE IF NOT EXISTS exams(
+  id SERIAL PRIMARY KEY, title TEXT NOT NULL, subject_id INT REFERENCES subjects(id) ON DELETE SET NULL,
+  date TEXT NOT NULL, max_marks DOUBLE PRECISION NOT NULL DEFAULT 100, created_at DOUBLE PRECISION NOT NULL
+);
+CREATE TABLE IF NOT EXISTS marks(
+  exam_id INT NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  score DOUBLE PRECISION NOT NULL, PRIMARY KEY(exam_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS leaves(
+  id SERIAL PRIMARY KEY, user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  from_date TEXT NOT NULL, to_date TEXT NOT NULL, reason TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+  note TEXT NOT NULL DEFAULT '', created_at DOUBLE PRECISION NOT NULL
+);
 CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS throttle(key TEXT PRIMARY KEY, n INT NOT NULL, t DOUBLE PRECISION NOT NULL);
 `;
@@ -49,6 +73,7 @@ ALTER TABLE attendance ALTER COLUMN subject_id SET NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS attendance_uniq ON attendance(date, subject_id, user_id);
 CREATE INDEX IF NOT EXISTS attendance_subject ON attendance(subject_id, date);
 `;
+const FEATURES = ["timetable", "resources", "exams", "leaves"];
 const DEFAULT_MSG = "The portal is being updated. Please check back soon.";
 
 let ready = null, configError = "";
@@ -73,9 +98,9 @@ function init() {
   return ready;
 }
 async function settings() {
-  const rows = await q("SELECT key,value FROM settings WHERE key IN ('maint','message')");
+  const rows = await q("SELECT key,value FROM settings");
   const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  return { maint: m.maint === "1", message: m.message || DEFAULT_MSG };
+  return { maint: m.maint === "1", message: m.message || DEFAULT_MSG, features: Object.fromEntries(FEATURES.map((f) => [f, m["feat_" + f] !== "0"])) };
 }
 const putSet = (k, v) => q("INSERT INTO settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [k, String(v)]);
 
@@ -127,6 +152,15 @@ app.use("/api", A(async (req, res, next) => {
   next();
 }));
 
+const FEATURE_PATHS = { timetable: "timetable", resources: "resources", exams: "exams", leaves: "leaves" };
+app.use("/api", A(async (req, res, next) => {
+  if (req.user && req.user.role !== "cr") {
+    const f = FEATURE_PATHS[req.path.split("/")[1]];
+    if (f && !(await settings()).features[f]) return res.status(403).json({ error: "This section is turned off by your CR" });
+  }
+  next();
+}));
+
 async function throttled(key) {
   const now = Date.now();
   const r = await one(`INSERT INTO throttle(key,n,t) VALUES($1,1,$2) ON CONFLICT(key) DO UPDATE SET
@@ -167,6 +201,7 @@ app.get("/api/settings", A(async (req, res) => res.json(await settings())));
 app.put("/api/settings", needCR, A(async (req, res) => {
   if (req.body.maint !== undefined) await putSet("maint", req.body.maint ? "1" : "0");
   if (req.body.message !== undefined) await putSet("message", clean(req.body.message, 300) || DEFAULT_MSG);
+  if (req.body.features && typeof req.body.features === "object") for (const f of FEATURES) if (typeof req.body.features[f] === "boolean") await putSet("feat_" + f, req.body.features[f] ? "1" : "0");
   res.json(await settings());
 }));
 app.post("/api/me/password", need, A(async (req, res) => {
@@ -180,7 +215,7 @@ app.post("/api/me/password", need, A(async (req, res) => {
 // ---------- summary ----------
 app.get("/api/summary", need, A(async (req, res) => {
   const c = await one("SELECT (SELECT COUNT(*) FROM users WHERE role='student')::int AS students, (SELECT COUNT(*) FROM assignments)::int AS assignments, (SELECT COUNT(*) FROM announcements)::int AS announcements");
-  if (req.user.role === "cr") return res.json(c);
+  if (req.user.role === "cr") return res.json({ ...c, pending_leaves: (await one("SELECT COUNT(*)::int AS n FROM leaves WHERE status='pending'")).n });
   const d = await one("SELECT COUNT(*)::int AS c FROM completions WHERE user_id=$1", [req.user.id]);
   const a = await one("SELECT COALESCE(SUM(CASE WHEN status<>'A' THEN 1 ELSE 0 END),0)::int AS p, COUNT(*)::int AS t FROM attendance WHERE user_id=$1", [req.user.id]);
   res.json({ students: c.students, pending: Math.max(c.assignments - d.c, 0), pct: a.t ? Math.round(a.p / a.t * 100) : null });
@@ -335,6 +370,118 @@ app.get("/api/reports", needCR, A(async (req, res) => {
       return { id: st.id, name: st.name, roll: st.roll, by, total: { ...tot, pct: pctOf(tot.p, tot.l, tot.a) } };
     })
   });
+}));
+
+// ---------- attendance sessions (edit / delete past records, CR) ----------
+app.get("/api/attendance/sessions", needCR, A(async (req, res) => {
+  res.json(await q(`SELECT a.date,a.subject_id,s.name AS subject,
+    COUNT(*) FILTER (WHERE a.status='P')::int AS present, COUNT(*) FILTER (WHERE a.status='L')::int AS late, COUNT(*) FILTER (WHERE a.status='A')::int AS absent
+    FROM attendance a JOIN subjects s ON s.id=a.subject_id GROUP BY a.date,a.subject_id,s.name ORDER BY a.date DESC, lower(s.name) LIMIT 60`));
+}));
+app.delete("/api/attendance", needCR, A(async (req, res) => {
+  const sid = intId(req.query.subject_id);
+  if (!validDate(req.query.date) || !sid) return res.status(400).json({ error: "Invalid session" });
+  await q("DELETE FROM attendance WHERE date=$1 AND subject_id=$2", [req.query.date, sid]);
+  res.json({ ok: true });
+}));
+
+// ---------- timetable ----------
+const validTime = (t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+const optSubject = async (v) => { const id = intId(v); return id && (await one("SELECT 1 AS x FROM subjects WHERE id=$1", [id])) ? id : null; };
+app.get("/api/timetable", need, A(async (req, res) => res.json(await q(`SELECT t.id,t.day,t.t_start AS start,t.t_end AS finish,t.subject_id,
+  COALESCE(NULLIF(t.title,''),s.name,'Class') AS title,t.room,t.teacher FROM timetable t LEFT JOIN subjects s ON s.id=t.subject_id ORDER BY t.day,t.t_start`))));
+app.post("/api/timetable", needCR, A(async (req, res) => {
+  const day = parseInt(req.body.day, 10), start = clean(req.body.start, 5), end = clean(req.body.finish, 5), title = clean(req.body.title, 60);
+  const sid = await optSubject(req.body.subject_id);
+  if (!(day >= 1 && day <= 7)) return res.status(400).json({ error: "Choose a day" });
+  if (!validTime(start) || !validTime(end) || start >= end) return res.status(400).json({ error: "Enter a valid start and end time" });
+  if (!sid && !title) return res.status(400).json({ error: "Choose a subject or type a title" });
+  const r = await one("INSERT INTO timetable(day,t_start,t_end,subject_id,title,room,teacher) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id", [day, start, end, sid, title, clean(req.body.room, 30), clean(req.body.teacher, 60)]);
+  res.json({ id: r.id });
+}));
+app.delete("/api/timetable/:id", needCR, A(async (req, res) => { const id = intId(req.params.id); if (id) await q("DELETE FROM timetable WHERE id=$1", [id]); res.json({ ok: true }); }));
+
+// ---------- resources ----------
+app.get("/api/resources", need, A(async (req, res) => res.json(await q("SELECT r.id,r.title,r.url,r.created_at,s.name AS subject FROM resources r LEFT JOIN subjects s ON s.id=r.subject_id ORDER BY r.created_at DESC LIMIT 200"))));
+app.post("/api/resources", needCR, A(async (req, res) => {
+  const title = clean(req.body.title, 120), url = clean(req.body.url, 500);
+  if (!title) return res.status(400).json({ error: "Add a title" });
+  if (!/^https?:\/\/[^\s]+$/i.test(url)) return res.status(400).json({ error: "Enter a full link starting with http:// or https://" });
+  const r = await one("INSERT INTO resources(title,url,subject_id,created_at) VALUES($1,$2,$3,$4) RETURNING id", [title, url, await optSubject(req.body.subject_id), Date.now()]);
+  res.json({ id: r.id });
+}));
+app.delete("/api/resources/:id", needCR, A(async (req, res) => { const id = intId(req.params.id); if (id) await q("DELETE FROM resources WHERE id=$1", [id]); res.json({ ok: true }); }));
+
+// ---------- exams and marks ----------
+app.get("/api/exams", need, A(async (req, res) => {
+  const cr = req.user.role === "cr";
+  const rows = await q(`SELECT e.id,e.title,e.date,e.max_marks,e.subject_id,s.name AS subject,
+    (SELECT score FROM marks m WHERE m.exam_id=e.id AND m.user_id=$1) AS score
+    ${cr ? ",(SELECT COUNT(*)::int FROM marks m WHERE m.exam_id=e.id) AS graded,(SELECT AVG(score) FROM marks m WHERE m.exam_id=e.id) AS avg" : ""}
+    FROM exams e LEFT JOIN subjects s ON s.id=e.subject_id ORDER BY e.date DESC, e.id DESC`, [req.user.id]);
+  res.json(rows);
+}));
+app.post("/api/exams", needCR, A(async (req, res) => {
+  const title = clean(req.body.title, 120), date = clean(req.body.date, 10), max = req.body.max_marks === "" || req.body.max_marks == null ? 100 : Number(req.body.max_marks);
+  if (!title) return res.status(400).json({ error: "Add a title" });
+  if (!validDate(date)) return res.status(400).json({ error: "Choose the exam date" });
+  if (!(max > 0 && max <= 1000)) return res.status(400).json({ error: "Total marks must be between 1 and 1000" });
+  const r = await one("INSERT INTO exams(title,subject_id,date,max_marks,created_at) VALUES($1,$2,$3,$4,$5) RETURNING id", [title, await optSubject(req.body.subject_id), date, max, Date.now()]);
+  res.json({ id: r.id });
+}));
+app.delete("/api/exams/:id", needCR, A(async (req, res) => { const id = intId(req.params.id); if (id) await q("DELETE FROM exams WHERE id=$1", [id]); res.json({ ok: true }); }));
+app.get("/api/exams/:id/marks", needCR, A(async (req, res) => {
+  const id = intId(req.params.id);
+  const exam = id && await one("SELECT e.id,e.title,e.date,e.max_marks,s.name AS subject FROM exams e LEFT JOIN subjects s ON s.id=e.subject_id WHERE e.id=$1", [id]);
+  if (!exam) return res.status(404).json({ error: "Exam not found" });
+  const students = await q("SELECT u.id,u.name,u.roll,m.score FROM users u LEFT JOIN marks m ON m.user_id=u.id AND m.exam_id=$1 WHERE u.role='student'", [id]);
+  res.json({ exam, students: students.sort(byRoll) });
+}));
+app.put("/api/exams/:id/marks", needCR, A(async (req, res) => {
+  const id = intId(req.params.id), scores = req.body.scores;
+  const exam = id && await one("SELECT max_marks FROM exams WHERE id=$1", [id]);
+  if (!exam) return res.status(404).json({ error: "Exam not found" });
+  if (!scores || typeof scores !== "object") return res.status(400).json({ error: "Invalid marks" });
+  const ups = [], dels = [];
+  for (const [k, v] of Object.entries(scores)) {
+    const uid = intId(k); if (!uid) continue;
+    if (v === "" || v === null) { dels.push(uid); continue; }
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0 || n > exam.max_marks) return res.status(400).json({ error: "Marks must be between 0 and " + exam.max_marks });
+    ups.push([uid, n]);
+  }
+  if (ups.length) await q(`INSERT INTO marks(exam_id,user_id,score) SELECT $1, x.uid, x.sc FROM unnest($2::int[], $3::float8[]) AS x(uid,sc)
+    JOIN users u ON u.id=x.uid AND u.role='student' ON CONFLICT(exam_id,user_id) DO UPDATE SET score=excluded.score`, [id, ups.map((u) => u[0]), ups.map((u) => u[1])]);
+  if (dels.length) await q("DELETE FROM marks WHERE exam_id=$1 AND user_id = ANY($2::int[])", [id, dels]);
+  res.json({ ok: true });
+}));
+
+// ---------- leave requests ----------
+app.get("/api/leaves", need, A(async (req, res) => {
+  const cr = req.user.role === "cr";
+  res.json(await q(`SELECT l.id,l.from_date,l.to_date,l.reason,l.status,l.note,l.created_at,u.name,u.roll FROM leaves l JOIN users u ON u.id=l.user_id
+    ${cr ? "" : "WHERE l.user_id=$1"} ORDER BY CASE WHEN l.status='pending' THEN 0 ELSE 1 END, l.created_at DESC LIMIT 200`, cr ? [] : [req.user.id]));
+}));
+app.post("/api/leaves", need, A(async (req, res) => {
+  if (req.user.role === "cr") return res.status(403).json({ error: "Only students request leave" });
+  const from = clean(req.body.from_date, 10), to = clean(req.body.to_date, 10), reason = clean(req.body.reason, 300);
+  if (!validDate(from) || !validDate(to) || from > to) return res.status(400).json({ error: "Choose valid dates (start before end)" });
+  if (!reason) return res.status(400).json({ error: "Write a reason" });
+  if ((await one("SELECT COUNT(*)::int AS n FROM leaves WHERE user_id=$1 AND status='pending'", [req.user.id])).n >= 5) return res.status(400).json({ error: "You already have 5 pending requests" });
+  const r = await one("INSERT INTO leaves(user_id,from_date,to_date,reason,created_at) VALUES($1,$2,$3,$4,$5) RETURNING id", [req.user.id, from, to, reason, Date.now()]);
+  res.json({ id: r.id });
+}));
+app.put("/api/leaves/:id", needCR, A(async (req, res) => {
+  const id = intId(req.params.id), st = req.body.status;
+  if (!id || !["approved", "rejected", "pending"].includes(st)) return res.status(400).json({ error: "Invalid status" });
+  const r = await one("UPDATE leaves SET status=$1, note=$2 WHERE id=$3 RETURNING id", [st, clean(req.body.note, 200), id]);
+  res.status(r ? 200 : 404).json(r ? { ok: true } : { error: "Request not found" });
+}));
+app.delete("/api/leaves/:id", need, A(async (req, res) => {
+  const id = intId(req.params.id); if (!id) return res.json({ ok: true });
+  if (req.user.role === "cr") await q("DELETE FROM leaves WHERE id=$1", [id]);
+  else await q("DELETE FROM leaves WHERE id=$1 AND user_id=$2 AND status='pending'", [id, req.user.id]);
+  res.json({ ok: true });
 }));
 
 app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));

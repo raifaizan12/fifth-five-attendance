@@ -37,6 +37,7 @@ nav button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--a
 .seg button{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
 .seg button.on-P{background:var(--accent);color:#fff;border-color:var(--accent)}
 .seg button.on-A{background:var(--warn);color:#fff;border-color:var(--warn)}
+.seg button.danger{color:var(--warn);border-color:var(--warn)}
 .seg button.on-L{background:#c9a227;color:#222;border-color:#c9a227}
 .btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
 .btn.ghost{background:none;color:var(--accent);border:1px solid var(--accent)}
@@ -68,7 +69,7 @@ th{color:var(--muted);font-weight:500;font-size:13px}
 </div>
 <div id="toast"></div>
 <script>
-var me=null,cfg={maint:false,message:""},tab="Home",adate=today(),mode="login",seq=0,asub=null,rfrom=today().slice(0,8)+"01",rto=today(),rsub="",lastRep=null;
+var me=null,cfg={maint:false,message:""},tab="Home",adate=today(),mode="login",seq=0,asub=null,rfrom=today().slice(0,8)+"01",rto=today(),rsub="",lastRep=null,mexam=null;
 function $(i){return document.getElementById(i)}
 function val(i){var x=$(i);return x?x.value.trim():""}
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -102,9 +103,10 @@ function maintView(){return '<div class="maint"><div style="font-size:44px">🛠
 async function home(){
   var s=await api("GET","/summary"),l=await api("GET","/announcements"),cr=me.role==="cr";
   var h='<div class="stats">'+(cr?
-    '<div class="stat"><span class="meta">Students</span><b>'+s.students+'</b></div><div class="stat"><span class="meta">Assignments</span><b>'+s.assignments+'</b></div><div class="stat"><span class="meta">Announcements</span><b>'+s.announcements+'</b></div>':
+    '<div class="stat"><span class="meta">Students</span><b>'+s.students+'</b></div><div class="stat"><span class="meta">Assignments</span><b>'+s.assignments+'</b></div><div class="stat"><span class="meta">Announcements</span><b>'+s.announcements+'</b></div><div class="stat"><span class="meta">Pending leave requests</span><b>'+(s.pending_leaves||0)+'</b></div>':
     '<div class="stat"><span class="meta">Pending assignments</span><b>'+s.pending+'</b></div><div class="stat"><span class="meta">My attendance</span><b>'+(s.pct===null?"–":s.pct+"%")+'</b></div><div class="stat"><span class="meta">Classmates</span><b>'+s.students+'</b></div>')+'</div>';
   if(cr)h+='<div class="card"><h3>Post an announcement</h3><input class="field" id="at" placeholder="Title"><textarea class="field" id="ab" rows="2" placeholder="Message"></textarea><button class="btn" data-act="postann">Post</button></div>';
+  h+=await homeExtras();
   h+='<h2 class="h2">Announcements</h2>';
   if(!l.length)h+='<div class="empty">No announcements yet.</div>';
   l.forEach(function(a){h+='<div class="card"><div class="row"><span class="meta">'+new Date(a.created_at).toLocaleDateString()+'</span>'+(cr?'<button class="btn ghost sm" data-act="delann" data-id="'+a.id+'">Delete</button>':'')+'</div><h3>'+esc(a.title)+'</h3><div class="meta" style="font-size:14px;white-space:pre-wrap">'+esc(a.body)+'</div></div>'});
@@ -145,7 +147,11 @@ async function attendance(){
   h+='<div class="stats"><div class="stat"><span class="meta">Present</span><b>'+c.P+'</b></div><div class="stat"><span class="meta">Absent</span><b>'+c.A+'</b></div><div class="stat"><span class="meta">Late</span><b>'+c.L+'</b></div></div>';
   if(!d.students.length)return h+'<div class="empty">No students yet. Students can sign up, or add them in the Students tab.</div>';
   h+='<button class="btn ghost" data-act="allp" style="margin-bottom:10px">Mark all present</button>';
-  d.students.forEach(function(s){h+='<div class="card row"><div><h3>'+esc(s.name)+'</h3><span class="meta">Roll '+esc(s.roll||"–")+'</span></div><div class="seg">'+["P","A","L"].map(function(v){return '<button data-act="mark" data-sid="'+s.id+'" data-v="'+v+'" class="'+(d.marks[s.id]===v?'on-'+v:'')+'">'+({P:"Present",A:"Absent",L:"Late"})[v]+'</button>'}).join("")+'</div></div>'});
+  d.students.forEach(function(s){h+='<div class="card row"><div><h3>'+esc(s.name)+'</h3><span class="meta">Roll '+esc(s.roll||"–")+'</span></div><div class="seg">'+["P","A","L"].map(function(v){return '<button data-act="mark" data-sid="'+s.id+'" data-v="'+v+'" class="'+(d.marks[s.id]===v?'on-'+v:'')+'">'+({P:"Present",A:"Absent",L:"Late"})[v]+'</button>'}).join("")+'<button data-act="clr" data-sid="'+s.id+'" title="Clear this mark">Clear</button></div></div>'});
+  var ss=await api("GET","/attendance/sessions");
+  h+='<h2 class="h2">Recent sessions</h2><div class="meta" style="margin:-4px 0 10px">Tap Edit to correct a past session, or Delete to remove it.</div>';
+  if(!ss.length)h+='<div class="empty">No sessions marked yet.</div>';
+  ss.forEach(function(x){h+='<div class="card row"><div><h3>'+esc(x.subject)+'</h3><span class="meta">'+x.date+' · Present '+x.present+' · Late '+x.late+' · Absent '+x.absent+'</span></div><div class="seg"><button data-act="editsess" data-d="'+x.date+'" data-s="'+x.subject_id+'">Edit</button><button class="danger" data-act="delsess" data-d="'+x.date+'" data-s="'+x.subject_id+'" data-n="'+esc(x.subject)+'">Delete</button></div></div>'});
   return h;
 }
 async function report(){
@@ -195,19 +201,94 @@ async function account(){
   if(me.role==="cr"){
     var s=await api("GET","/settings");cfg=s;
     h+='<div class="card"><div class="row"><div><h3>Maintenance mode</h3><div class="meta">'+(s.maint?'ON: students see a maintenance screen':'OFF: portal is live')+'</div></div><button class="btn'+(s.maint?' ghost':'')+'" data-act="maint">'+(s.maint?'Turn off':'Turn on')+'</button></div><label class="meta" style="display:block;margin-top:12px">Message shown to students</label><textarea class="field" id="mm" rows="3">'+esc(s.message)+'</textarea><button class="btn ghost" data-act="savemsg">Save message</button></div>';
+    h+='<div class="card"><h3>Student portal sections</h3><div class="meta" style="margin-bottom:6px">Turn sections on or off for students. CRs always see everything.</div>'+[["timetable","Timetable"],["resources","Resources"],["exams","Exams and marks"],["leaves","Leave requests"]].map(function(x){var on=(s.features||{})[x[0]]!==false;return '<div class="row" style="padding:6px 0"><span>'+x[1]+'</span><button class="btn sm'+(on?'':' ghost')+'" data-act="feat" data-f="'+x[0]+'" data-on="'+(on?1:0)+'">'+(on?'On':'Off')+'</button></div>'}).join("")+'</div>';
   }
   h+='<div class="card"><h3>Change password</h3><input class="field" id="cp" type="password" placeholder="Current password" autocomplete="current-password"><input class="field" id="np" type="password" placeholder="New password (6+ characters)" autocomplete="new-password"><button class="btn ghost" data-act="chpw">Update password</button></div><button class="btn ghost" data-act="logout">Log out</button>';
   return h;
 }
-var VIEWS={Home:home,Assignments:assignments,Attendance:attendance,Report:report,Students:students,Account:account};
+var DAYS=["","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+function num(v){return Math.round(v*100)/100}
+function ttRow(x){return '<div class="card row"><div><h3>'+esc(x.title)+'</h3><span class="meta">'+x.start+' – '+x.finish+(x.room?' · Room '+esc(x.room):'')+(x.teacher?' · '+esc(x.teacher):'')+'</span></div>'+(me.role==="cr"?'<button class="btn ghost sm danger" data-act="deltt" data-id="'+x.id+'">Delete</button>':'')+'</div>'}
+async function homeExtras(){
+  var F=cfg.features||{},h="";
+  if(F.timetable!==false){try{
+    var tt=await api("GET","/timetable"),dn=new Date().getDay()||7,td=tt.filter(function(x){return x.day===dn});
+    h+='<h2 class="h2">Today’s classes</h2>'+(td.length?td.map(ttRow).join(""):'<div class="empty">No classes scheduled today.</div>');
+  }catch(e){}}
+  if(F.exams!==false){try{
+    var ex=await api("GET","/exams"),t0=today(),up=ex.filter(function(x){return x.date>=t0}).reverse().slice(0,3);
+    if(up.length)h+='<h2 class="h2">Upcoming exams</h2>'+up.map(function(x){return '<div class="card row"><div><h3>'+esc(x.title)+'</h3><span class="meta">'+esc(x.subject||"")+'</span></div><span class="tag">'+x.date+'</span></div>'}).join("");
+  }catch(e){}}
+  return h;
+}
+async function timetable(){
+  var tt=await api("GET","/timetable"),cr=me.role==="cr",h="";
+  if(cr){
+    var subs=await api("GET","/subjects");
+    h+='<div class="card"><h3>Add a class</h3><select class="field" id="td">'+DAYS.slice(1).map(function(n,i){return '<option value="'+(i+1)+'">'+n+'</option>'}).join("")+'</select><div class="row" style="flex-wrap:nowrap;gap:8px"><input class="field" id="ts" type="time" value="08:00"><input class="field" id="te" type="time" value="08:45"></div><select class="field" id="tsub"><option value="">Subject (or type a title below)</option>'+subOpts(subs,"")+'</select><input class="field" id="ttl" placeholder="Custom title (e.g. Break, Assembly)"><input class="field" id="trm" placeholder="Room (optional)"><input class="field" id="ttc" placeholder="Teacher (optional)"><button class="btn" data-act="addtt">Add to timetable</button></div>';
+  }
+  if(!tt.length)return h+'<div class="empty">No timetable yet.</div>';
+  var dn=new Date().getDay()||7;
+  for(var d=1;d<=7;d++){var rows=tt.filter(function(x){return x.day===d});if(!rows.length)continue;h+='<h2 class="h2">'+DAYS[d]+(d===dn?' <span class="tag">Today</span>':'')+'</h2>'+rows.map(ttRow).join("")}
+  return h;
+}
+async function resources(){
+  var rs=await api("GET","/resources"),cr=me.role==="cr",h="";
+  if(cr){var subs=await api("GET","/subjects");h+='<div class="card"><h3>Share a resource</h3><input class="field" id="rt1" placeholder="Title"><input class="field" id="ru" placeholder="Link (https://...)" autocapitalize="none"><select class="field" id="rsb"><option value="">Subject (optional)</option>'+subOpts(subs,"")+'</select><button class="btn" data-act="addres">Share</button></div>'}
+  if(!rs.length)return h+'<div class="empty">No resources shared yet.</div>';
+  rs.forEach(function(x){h+='<div class="card row"><div><h3><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">'+esc(x.title)+'</a></h3>'+(x.subject?'<span class="tag">'+esc(x.subject)+'</span>':'')+'<span class="meta">'+new Date(x.created_at).toLocaleDateString()+'</span></div>'+(cr?'<button class="btn ghost sm danger" data-act="delres" data-id="'+x.id+'">Delete</button>':'')+'</div>'});
+  return h;
+}
+async function marksEditor(){
+  var r=await api("GET","/exams/"+mexam+"/marks");
+  var h='<div class="row" style="margin-bottom:10px"><div><h3 style="margin:0">'+esc(r.exam.title)+'</h3><span class="meta">'+esc(r.exam.subject||"")+' · '+r.exam.date+' · out of '+num(r.exam.max_marks)+'</span></div><button class="btn ghost" data-act="backexam">Back</button></div>';
+  if(!r.students.length)return h+'<div class="empty">No students yet.</div>';
+  r.students.forEach(function(s){h+='<div class="card row"><div><h3>'+esc(s.name)+'</h3><span class="meta">Roll '+esc(s.roll||"–")+'</span></div><input class="field sc" type="number" min="0" max="'+r.exam.max_marks+'" step="any" data-uid="'+s.id+'" value="'+(s.score===null?"":s.score)+'" placeholder="Marks" style="width:110px;margin:0"></div>'});
+  return h+'<button class="btn" data-act="savemarks">Save marks</button><p class="meta">Leave a box empty for no marks. Students see their own marks.</p>';
+}
+async function exams(){
+  var cr=me.role==="cr";
+  if(cr&&mexam)return marksEditor();
+  var ex=await api("GET","/exams"),h="";
+  if(cr){var subs=await api("GET","/subjects");h+='<div class="card"><h3>New exam / test</h3><input class="field" id="et" placeholder="Title (e.g. Mid-term)"><select class="field" id="esb"><option value="">Subject (optional)</option>'+subOpts(subs,"")+'</select><div class="row" style="flex-wrap:nowrap;gap:8px"><input class="field" id="ed" type="date" value="'+today()+'"><input class="field" id="em" type="number" min="1" value="100" placeholder="Total marks"></div><button class="btn" data-act="addexam">Add exam</button></div>'}
+  else{
+    var g=ex.filter(function(x){return x.score!==null});
+    if(g.length){var avg=Math.round(g.reduce(function(a,x){return a+x.score/x.max_marks*100},0)/g.length);h+='<div class="stats"><div class="stat"><span class="meta">Average score</span><b>'+avg+'%</b></div><div class="stat"><span class="meta">Exams graded</span><b>'+g.length+'</b></div></div>'}
+  }
+  if(!ex.length)return h+'<div class="empty">No exams yet.</div>';
+  ex.forEach(function(x){
+    var right;
+    if(cr)right='<div class="seg"><button data-act="marks" data-id="'+x.id+'">Enter marks</button><button class="danger" data-act="delexam" data-id="'+x.id+'" data-n="'+esc(x.title)+'">Delete</button></div>';
+    else if(x.score===null)right='<span class="meta">Not graded yet</span>';
+    else{var pc=Math.round(x.score/x.max_marks*100);right='<span class="tag'+(pc<40?' warn':'')+'">'+num(x.score)+' / '+num(x.max_marks)+' · '+pc+'%</span>'}
+    h+='<div class="card row"><div><h3>'+esc(x.title)+'</h3><span class="meta">'+esc(x.subject||"General")+' · '+x.date+(cr?' · graded '+x.graded+(x.avg!==null?' · avg '+num(x.avg):''):'')+'</span></div>'+right+'</div>';
+  });
+  return h;
+}
+function lvTag(st){return st==="approved"?'<span class="tag">Approved</span>':st==="rejected"?'<span class="tag warn">Rejected</span>':'<span class="tag late">Pending</span>'}
+async function leave(){
+  var ls=await api("GET","/leaves"),cr=me.role==="cr",h="";
+  if(!cr)h+='<div class="card"><h3>Request leave</h3><div class="row" style="flex-wrap:nowrap;gap:8px"><div style="flex:1"><span class="meta">From</span><input class="field" id="lf" type="date" value="'+today()+'"></div><div style="flex:1"><span class="meta">To</span><input class="field" id="lt" type="date" value="'+today()+'"></div></div><textarea class="field" id="lr" rows="2" placeholder="Reason"></textarea><button class="btn" data-act="reqleave">Send request</button></div>';
+  if(!ls.length)return h+'<div class="empty">'+(cr?"No leave requests.":"You have not requested any leave.")+'</div>';
+  ls.forEach(function(x){
+    var btns=cr?'<button data-act="lvok" data-id="'+x.id+'">Approve</button><button class="danger" data-act="lvno" data-id="'+x.id+'">Reject</button><button data-act="lvdel" data-id="'+x.id+'">Delete</button>':(x.status==="pending"?'<button class="danger" data-act="lvdel" data-id="'+x.id+'">Cancel request</button>':'');
+    h+='<div class="card"><div class="row"><div><h3>'+(cr?esc(x.name)+(x.roll?' · Roll '+esc(x.roll):''):x.from_date+' to '+x.to_date)+'</h3><span class="meta">'+(cr?x.from_date+' to '+x.to_date+' · ':'')+esc(x.reason)+'</span></div>'+lvTag(x.status)+'</div>'+(x.note?'<div class="meta" style="margin-top:6px">CR note: '+esc(x.note)+'</div>':'')+(btns?'<div class="seg" style="margin-top:8px">'+btns+'</div>':'')+'</div>';
+  });
+  return h;
+}
+var VIEWS={Home:home,Assignments:assignments,Attendance:attendance,Timetable:timetable,Resources:resources,Exams:exams,Leave:leave,Report:report,Students:students,Account:account};
 async function render(){
   var my=++seq,v=$("view"),tb=$("tabs");
   $("who").innerHTML=me?esc(me.name)+'<br>'+(me.role==="cr"?"CR / teacher":"Student"):"";
   if(!me){tb.innerHTML="";v.innerHTML=authView();return}
+  if(me.role!=="cr"){try{cfg=await api("GET","/settings")}catch(e){}if(my!==seq)return}
   if(me.role!=="cr"&&cfg.maint){tb.innerHTML="";v.innerHTML=maintView();return}
-  var tabs=["Home","Assignments","Attendance"].concat(me.role==="cr"?["Report","Students"]:[],["Account"]);
+  var F=cfg.features||{},isCR=me.role==="cr",FT={Timetable:"timetable",Resources:"resources",Exams:"exams",Leave:"leaves"},tabs=["Home","Assignments","Attendance"];
+  ["Timetable","Resources","Exams","Leave"].forEach(function(t){if(F[FT[t]]!==false||isCR)tabs.push(t)});
+  if(isCR)tabs.push("Report","Students");
+  tabs.push("Account");
   if(tabs.indexOf(tab)<0)tab="Home";
-  tb.innerHTML=tabs.map(function(t){return '<button role="tab" data-act="tab" data-t="'+t+'" aria-selected="'+(t===tab)+'">'+t+'</button>'}).join("");
+  tb.innerHTML=tabs.map(function(t){return '<button role="tab" data-act="tab" data-t="'+t+'" aria-selected="'+(t===tab)+'">'+t+(isCR&&FT[t]&&F[FT[t]]===false?' (off)':'')+'</button>'}).join("");
   try{var h=await VIEWS[tab]();if(my!==seq)return;v.innerHTML=(cfg.maint?'<div class="banner">Maintenance mode is ON. Students currently see the maintenance screen.</div>':'')+h}
   catch(e){if(my===seq)fail(e)}
 }
@@ -215,7 +296,7 @@ document.addEventListener("click",function(e){
   var b=e.target.closest("[data-act]");if(!b)return;
   var a=b.dataset.act,id=b.dataset.id;
   act(async function(){
-    if(a==="tab"){tab=b.dataset.t;return render()}
+    if(a==="tab"){tab=b.dataset.t;mexam=null;return render()}
     if(a==="mode"){mode=b.dataset.m;return render()}
     if(a==="login"||a==="signup"){
       $("aerr").textContent="";
@@ -240,6 +321,22 @@ document.addEventListener("click",function(e){
     if(a==="genrep"){var f=val("rf"),t=val("rt");if(f&&t&&f>t)return toast("Start date must be before end date");rfrom=f||rfrom;rto=t||rto;rsub=val("rs");return render()}
     if(a==="csv"){if(!lastRep)return;var u=URL.createObjectURL(new Blob(["\ufeff"+makeCsv(lastRep)],{type:"text/csv;charset=utf-8"})),l=document.createElement("a");l.href=u;l.download="attendance-"+lastRep.from+"-to-"+lastRep.to+".csv";document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u)},2000);return}
     if(a==="print"){window.print();return}
+    if(a==="clr"){var o1={};o1[b.dataset.sid]="";await api("PUT","/attendance",{date:adate,subject_id:asub,marks:o1});return render()}
+    if(a==="editsess"){adate=b.dataset.d;asub=b.dataset.s;window.scrollTo(0,0);return render()}
+    if(a==="delsess"){if(!confirm("Delete all "+b.dataset.n+" attendance for "+b.dataset.d+"?"))return;await api("DELETE","/attendance?date="+b.dataset.d+"&subject_id="+b.dataset.s);return render()}
+    if(a==="addtt"){await api("POST","/timetable",{day:val("td"),start:val("ts"),finish:val("te"),subject_id:val("tsub"),title:val("ttl"),room:val("trm"),teacher:val("ttc")});return render()}
+    if(a==="deltt"){await api("DELETE","/timetable/"+id);return render()}
+    if(a==="addres"){await api("POST","/resources",{title:val("rt1"),url:val("ru"),subject_id:val("rsb")});return render()}
+    if(a==="delres"){if(!confirm("Delete this resource?"))return;await api("DELETE","/resources/"+id);return render()}
+    if(a==="addexam"){await api("POST","/exams",{title:val("et"),subject_id:val("esb"),date:val("ed"),max_marks:val("em")});return render()}
+    if(a==="delexam"){if(!confirm("Delete "+b.dataset.n+" and all its marks?"))return;await api("DELETE","/exams/"+id);return render()}
+    if(a==="marks"){mexam=id;return render()}
+    if(a==="backexam"){mexam=null;return render()}
+    if(a==="savemarks"){var sc={};document.querySelectorAll(".sc").forEach(function(i){sc[i.dataset.uid]=i.value.trim()});await api("PUT","/exams/"+mexam+"/marks",{scores:sc});return toast("Marks saved")}
+    if(a==="reqleave"){await api("POST","/leaves",{from_date:val("lf"),to_date:val("lt"),reason:val("lr")});toast("Request sent");return render()}
+    if(a==="lvok"||a==="lvno"){var nt=prompt("Note for the student (optional):","");if(nt===null)return;await api("PUT","/leaves/"+id,{status:a==="lvok"?"approved":"rejected",note:nt});return render()}
+    if(a==="lvdel"){if(!confirm("Delete this request?"))return;await api("DELETE","/leaves/"+id);return render()}
+    if(a==="feat"){var fo={};fo[b.dataset.f]=b.dataset.on!=="1";cfg=await api("PUT","/settings",{features:fo});return render()}
     if(a==="addstu"){await api("POST","/students",{name:val("sn"),roll:val("sr"),username:val("su"),password:$("sp").value,role:val("sl")});toast("Account added");return render()}
     if(a==="resetpw"){var pw=prompt("New password for "+b.dataset.n+" (6+ characters):");if(!pw)return;await api("POST","/students/"+id+"/password",{password:pw});return toast("Password updated")}
     if(a==="delstu"){if(!confirm("Remove "+b.dataset.n+" and all their records?"))return;await api("DELETE","/students/"+id);return render()}
