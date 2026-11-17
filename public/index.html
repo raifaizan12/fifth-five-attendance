@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#171a3d">
+<title>Class Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:#f2f3fa;--surface:#fff;--surface2:#f6f7fd;--ink:#151832;--muted:#686d8a;--line:#e5e7f2;
+--brand:#5b4ef0;--brand-soft:#ecebff;--grad:linear-gradient(135deg,#5b4ef0,#8a5cf6);
+--present:#0fa968;--present-soft:#dcf7ea;--absent:#e8455f;--absent-soft:#ffe3e8;--late:#c77d00;--late-soft:#fff0cf;
+--shadow:0 1px 2px rgba(21,24,50,.04),0 10px 28px -14px rgba(21,24,50,.16);
+--font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0d0f1f;--surface:#171a31;--surface2:#1d2142;--ink:#eceefb;--muted:#9a9fc0;--line:#2a2e52;
+--brand:#928bff;--brand-soft:#26244f;--present:#34d399;--present-soft:#11392d;--absent:#ff7088;--absent-soft:#43202a;--late:#fbbf24;--late-soft:#42330f;--shadow:none;color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 55%,transparent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.ic{flex:none;display:block}
+/* shell */
+.shell{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px;padding:22px 14px 16px;background:linear-gradient(180deg,#181c42 0%,#0f1231 100%);color:#c8cbf0}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 18px;color:#fff;font-weight:800;font-size:18px;letter-spacing:-.01em}
+.logo{width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#fff;box-shadow:0 8px 20px -6px rgba(91,78,240,.7)}
+.navs{display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1}
+.navb{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:0;border-radius:12px;background:none;color:#aeb2e0;font-weight:600;font-size:14.5px;cursor:pointer;text-align:left;transition:background .15s,color .15s}
+.navb:hover{background:rgba(255,255,255,.07);color:#fff}
+.navb[aria-current="page"]{background:rgba(255,255,255,.13);color:#fff}
+.navb[aria-current="page"] .ic{color:#b9b3ff}
+.navb small{margin-left:auto;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;background:rgba(255,255,255,.14)}
+.me{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.07);color:#fff}
+.me b{display:block;font-size:13.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me span.sub{font-size:12px;color:#aeb2e0}
+.me .out{margin-left:auto;background:none;border:0;color:#aeb2e0;cursor:pointer;padding:6px;border-radius:8px}
+.me .out:hover{color:#fff;background:rgba(255,255,255,.1)}
+.main{min-width:0}
+.top,.dock,.sheet{display:none}
+.content{max-width:1020px;margin:0 auto;padding:34px 32px 64px}
+.ph{margin-bottom:22px}
+.ph h1{font-size:28px;font-weight:800;letter-spacing:-.025em;line-height:1.2}
+.ph p{color:var(--muted);margin-top:4px}
+.h2{font-size:17px;font-weight:800;letter-spacing:-.01em;margin:28px 0 12px;display:flex;align-items:center;gap:8px}
+.meta{color:var(--muted);font-size:13px}
+/* surfaces */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card h3{font-size:15.5px;font-weight:700;line-height:1.3}
+.card.flat{box-shadow:none}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.row.nw{flex-wrap:nowrap}
+.grow{flex:1;min-width:0}
+.stack{display:flex;flex-direction:column;gap:2px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.tile{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.tile .ti{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand)}
+.tile.good .ti{background:var(--present-soft);color:var(--present)}.tile.bad .ti{background:var(--absent-soft);color:var(--absent)}.tile.warn .ti{background:var(--late-soft);color:var(--late)}
+.tile b{display:block;font-size:24px;font-weight:800;line-height:1.1;letter-spacing:-.02em}
+.tile span{font-size:12.5px;color:var(--muted);font-weight:500}
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:26px;margin-bottom:16px;color:#fff;background:linear-gradient(120deg,#4a3fe0 0%,#7a52ee 55%,#a45cf0 100%);display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;box-shadow:0 20px 40px -22px rgba(91,78,240,.7)}
+.hero::after{content:"";position:absolute;right:-60px;top:-80px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 68%);pointer-events:none}
+.hero h2{font-size:26px;font-weight:800;letter-spacing:-.025em;line-height:1.2}
+.hero p{opacity:.85;margin-top:4px}
+.hero .gchip{margin-top:12px;background:rgba(255,255,255,.2);color:#fff}
+.hero .gchip::before{background:#fff}
+.hero .ring{background:rgba(255,255,255,.14);border-radius:50%}
+.hero .ring circle:first-child{stroke:rgba(255,255,255,.25)}
+.hero .ring b{color:#fff}
+.hero .btn{background:#fff;color:#3d33c9}
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;color:var(--muted);padding:34px 16px;border:1.5px dashed var(--line);border-radius:18px;margin-bottom:12px}
+.empty .ic{color:var(--brand);opacity:.7}.empty b{color:var(--ink);font-size:15px}
+.banner{display:flex;gap:10px;align-items:center;background:var(--late-soft);color:var(--late);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:14px;font-weight:600}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--grad);color:#fff;border:0;border-radius:12px;padding:11px 18px;font-weight:700;font-size:14.5px;cursor:pointer;box-shadow:0 8px 18px -10px rgba(91,78,240,.9);transition:transform .12s,filter .15s}
+.btn:hover{filter:brightness(1.07)}.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--surface);color:var(--brand);border:1.5px solid var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--brand);filter:none}
+.btn.danger{color:var(--absent)}.btn.danger:hover{border-color:var(--absent)}
+.btn.block{width:100%}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:10px}
+/* forms */
+.field{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface2);color:var(--ink);margin:5px 0 12px;transition:border-color .15s,background .15s}
+.field:focus{outline:none;border-color:var(--brand);background:var(--surface)}
+textarea.field{resize:vertical}
+label.lbl{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.err{color:var(--absent);font-size:13.5px;font-weight:600;min-height:20px;margin-bottom:6px}
+.inl{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}.inl .field{margin:5px 0 0;width:auto}
+/* chips */
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--present-soft);color:var(--present);white-space:nowrap}
+.tag.warn{background:var(--absent-soft);color:var(--absent)}.tag.late{background:var(--late-soft);color:var(--late)}.tag.brand{background:var(--brand-soft);color:var(--brand)}
+.gchip{display:inline-flex;align-items:center;gap:6px;padding:3px 11px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;background:hsl(var(--h) 90% 93%);color:hsl(var(--h) 65% 28%)}
+.gchip::before{content:"";width:8px;height:8px;border-radius:50%;background:hsl(var(--h) 75% 52%)}
+.gchip.none{--h:230;filter:saturate(.2)}
+@media (prefers-color-scheme:dark){.gchip{background:hsl(var(--h) 45% 20%);color:hsl(var(--h) 90% 82%)}}
+.av{--s:40px;width:var(--s);height:var(--s);border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:calc(var(--s)*.36);color:#fff;background:linear-gradient(135deg,hsl(var(--h) 72% 56%),hsl(calc(var(--h) + 45) 72% 44%))}
+.pills{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:6px;scrollbar-width:none}.pills::-webkit-scrollbar{display:none}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:8px 16px;font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer;transition:all .15s}
+.pill:hover{border-color:var(--brand);color:var(--brand)}
+.pill.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 16px -10px rgba(91,78,240,.9)}
+.pill.g.on{background:hsl(var(--h) 70% 48%);box-shadow:none}
+.pill i{font-style:normal;font-size:11px;padding:0 6px;border-radius:99px;background:rgba(127,127,160,.18)}
+.pill.on i{background:rgba(255,255,255,.25)}
+/* attendance marking */
+.seg{display:flex;gap:6px;align-items:center}
+.seg button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:44px;height:38px;padding:0 12px;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;transition:all .12s}
+.seg button:hover{border-color:var(--brand);color:var(--brand)}
+.seg button.on-P{background:var(--present);border-color:var(--present);color:#fff}
+.seg button.on-L{background:#f2a516;border-color:#f2a516;color:#2b1d00}
+.seg button.on-A{background:var(--absent);border-color:var(--absent);color:#fff}
+.seg button.danger{color:var(--absent)}.seg button.x{min-width:38px;padding:0;border-style:dashed}
+.seg .s{display:none}
+.gsec{border-left:5px solid hsl(var(--h) 70% 55%);padding:0;overflow:hidden}
+.gsec>header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 18px;background:hsl(var(--h) 90% 97%)}
+@media (prefers-color-scheme:dark){.gsec>header{background:hsl(var(--h) 35% 15%)}}
+.gsec .st{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 18px;border-top:1px solid var(--line)}
+.srow .who{display:flex;align-items:center;gap:12px;min-width:0}.srow h3{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* meters */
+.ring{position:relative;display:inline-grid;place-items:center;flex:none}
+.ring svg{position:absolute;inset:0}.ring b{font-size:14px;font-weight:800;position:relative}
+.bar{display:block;height:8px;border-radius:99px;background:var(--line);overflow:hidden;flex:1;min-width:60px}.bar i{display:block;height:100%;border-radius:99px;transition:width .5s}
+.mrow{display:flex;align-items:center;gap:12px;padding:6px 0}.mrow .nm{width:120px;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mrow .pc{width:44px;text-align:right;font-size:13px;font-weight:800}
+.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.gcard{margin:0;border-top:5px solid hsl(var(--h) 70% 55%)}
+.gcard .mem{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 8px}
+.mem>span{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-size:12.5px;font-weight:600}
+/* tables */
+.scroll{overflow-x:auto}.card.scroll{padding:6px 8px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:700;font-size:12.5px;white-space:nowrap}tr:last-child td{border-bottom:0}
+.tdn{display:flex;align-items:center;gap:10px;font-weight:600}
+/* misc rows */
+.tt{display:flex;align-items:center;gap:14px}
+.tt .tm{min-width:88px;text-align:center;padding:8px 10px;border-radius:12px;background:var(--brand-soft);color:var(--brand);font-weight:800;font-size:13px;line-height:1.25}
+.task{display:flex;gap:14px;align-items:flex-start;cursor:pointer}
+.task input{appearance:none;width:24px;height:24px;border:2px solid var(--line);border-radius:8px;margin-top:1px;cursor:pointer;display:grid;place-items:center;flex:none;transition:all .15s}
+.task input:checked{background:var(--present);border-color:var(--present)}
+.task input:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.task.done h3{text-decoration:line-through;color:var(--muted)}
+.fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.sw{display:flex;padding:5px;border-radius:14px;background:var(--surface2);border:1px solid var(--line);margin-bottom:16px;gap:4px}
+.sw button{flex:1;border:0;background:none;padding:10px;border-radius:10px;font-weight:700;color:var(--muted);cursor:pointer}
+.sw button.on{background:var(--surface);color:var(--brand);box-shadow:var(--shadow)}
+.tog{position:relative;width:46px;height:26px;border-radius:99px;border:0;background:var(--line);cursor:pointer;flex:none;transition:background .2s}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.tog.on{background:var(--present)}.tog.on::after{transform:translateX(20px)}
+#toast{position:fixed;left:50%;transform:translate(-50%,20px);bottom:calc(88px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;opacity:0;pointer-events:none;transition:all .25s;font-weight:600;font-size:14px;max-width:90%;z-index:60;box-shadow:0 12px 30px -10px rgba(0,0,0,.5)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+/* auth */
+.guest .side,.guest .top,.guest .dock{display:none}
+.guest.shell{display:block}.guest .content{max-width:none;padding:0}
+.auth{display:grid;grid-template-columns:1.05fr 1fr;min-height:100vh}
+.auth-art{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:44px;color:#fff;background:linear-gradient(150deg,#171a3d 0%,#3a2fc9 55%,#8a5cf6 100%)}
+.auth-art::before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;right:-120px;bottom:-140px;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%)}
+.auth-art h2{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1.12;max-width:420px}
+.auth-art p{opacity:.8;margin-top:12px;max-width:380px}
+.pts{display:flex;flex-direction:column;gap:12px;position:relative}
+.pts div{display:flex;gap:12px;align-items:center;font-weight:600}.pts .ic{padding:8px;width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.16)}
+.auth-form{display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.auth-box{width:100%;max-width:410px}
+.auth-box h1{font-size:28px;font-weight:800;letter-spacing:-.025em}
+.auth-box .meta{margin:6px 0 22px;font-size:14px}
+.mini-brand{display:none}
+.maint{text-align:center;padding:90px 20px}.maint .logo{margin:0 auto 18px;width:64px;height:64px;border-radius:20px}.maint h2{font-size:26px;font-weight:800;margin-bottom:8px}.maint .meta{max-width:420px;margin:0 auto 20px;font-size:15px}
+/* responsive */
+@media (max-width:900px){
+.shell{display:block}.side{display:none}
+.top{display:flex;position:sticky;top:0;z-index:30;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top .brand{padding:0;color:var(--ink);font-size:17px}.top .logo{width:34px;height:34px;border-radius:11px}
+.content{padding:20px 16px calc(112px + env(safe-area-inset-bottom,0px))}
+.ph h1{font-size:24px}.hero{padding:22px}.hero h2{font-size:22px}
+.dock{display:flex;position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:40;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:6px;box-shadow:0 18px 40px -16px rgba(21,24,50,.45)}
+.dock button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:8px 2px;border-radius:16px;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer}
+.dock button[aria-current="page"]{background:var(--brand-soft);color:var(--brand)}
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(10,12,30,.5);align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s;display:flex}
+.sheet.open{opacity:1;pointer-events:auto}
+.sheet .panel{width:100%;background:var(--surface);border-radius:26px 26px 0 0;padding:14px 16px calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .25s}
+.sheet.open .panel{transform:none}
+.sheet .grab{width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 16px}
+.sheet .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sheet .grid button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 6px;border:1px solid var(--line);border-radius:16px;background:var(--surface2);font-weight:700;font-size:12.5px;cursor:pointer}
+.sheet .grid button[aria-current="page"]{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+.auth{grid-template-columns:1fr}.auth-art{display:none}.mini-brand{display:flex;margin-bottom:26px}
+.auth-form{align-items:flex-start;padding-top:calc(34px + env(safe-area-inset-top,0px))}
+.gg{grid-template-columns:1fr}
+.seg .l{display:none}.seg .s{display:inline}.seg button{min-width:40px;padding:0 10px}
+.srow{padding:11px 14px}.gsec>header{padding:12px 14px}
+}
+@media (max-width:480px){.grid2{grid-template-columns:1fr}.mrow .nm{width:92px}.tiles{grid-template-columns:1fr 1fr}.tile{padding:13px;gap:10px}.tile .ti{width:38px;height:38px}.tile b{font-size:21px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{*{color:#000!important;background:#fff!important;box-shadow:none!important}.side,.top,.dock,.sheet,.noprint,.pills,button,#toast{display:none!important}.shell{display:block}.content{padding:0;max-width:none}.card,.tile{border:1px solid #999!important}.scroll{overflow:visible}table{min-width:0}.gchip,.tag{border:1px solid #999}.hero{border:1px solid #999}}
+</style>
+</head>
+<body>
+<div class="shell guest" id="shell">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="top" id="top"></div>
+    <main class="content" id="view"><div class="empty">Loading…</div></main>
+  </div>
+  <nav class="dock" id="dock" aria-label="Main"></nav>
+</div>
+<div class="sheet" id="sheet" data-act="closesheet"></div>
+<div id="toast" role="status"></div>
+<script>
+var me=null,cfg={maint:false,message:"",features:{}},tab="Home",adate=today(),mode="login",seq=0,asub=null,agrp="",
+rfrom=today().slice(0,8)+"01",rto=today(),rsub="",rgrp="",lastRep=null,lastAtt=null,mexam=null,manage=false,sheetOpen=false;
+function $(i){return document.getElementById(i)}
+function val(i){var x=$(i);return x?x.value.trim():""}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function toast(m){var t=$("toast");t.textContent=m;t.className="show";clearTimeout(toast.t);toast.t=setTimeout(function(){t.className=""},3200)}
+async function api(m,p,b){
+  var r=await fetch("/api"+p,{method:m,credentials:"same-origin",headers:{"Content-Type":"application/json","X-Requested-With":"portal"},body:b?JSON.stringify(b):undefined});
+  var j={};try{j=await r.json()}catch(e){}
+  if(!r.ok){var e=new Error(j.error||("Error "+r.status));e.status=r.status;e.data=j;throw e}
+  return j;
+}
+function fail(e){
+  if(e.status===401){me=null;render();return}
+  if(e.status===503&&e.data&&e.data.error==="maintenance"){cfg.maint=true;cfg.message=e.data.message;if(me&&me.role!=="cr"){render();return}}
+  toast(e.message||"Something went wrong");
+}
+async function act(fn){try{await fn()}catch(e){fail(e)}}
+
+/* ---------- icons ---------- */
+var IC={
+home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+tasks:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 12h6M9 16h4"/>',
+check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+award:'<circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/>',
+send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+chart:'<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V7M17 16v-8"/>',
+userplus:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
+user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',
+x:'<path d="M18 6 6 18M6 6l12 12"/>',
+down:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+print:'<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+trash:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+mega:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+alert:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>',
+book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+tool:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.7 2.7-2.3-.7-.7-2.3z"/>',
+cap:'<path d="m22 9-10-5L2 9l10 5 10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>'
+};
+function ic(n,s){return '<svg class="ic" width="'+(s||20)+'" height="'+(s||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[n]+'</svg>'}
+
+/* ---------- small components ---------- */
+function hue(s){s=String(s||"").toLowerCase();var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+function gchip(g){return g?'<span class="gchip" style="--h:'+hue(g)+'">'+esc(g)+'</span>':'<span class="gchip none">No group</span>'}
+function avatar(n,g,sz){var p=String(n||"?").trim().split(/\s+/),t=(p[0]||"?").charAt(0)+(p.length>1?p[p.length-1].charAt(0):"");return '<span class="av" style="--h:'+hue(g||n)+(sz?';--s:'+sz+'px':'')+'">'+esc(t.toUpperCase())+'</span>'}
+function pcol(p){return p===null||p===undefined?"var(--line)":p>=75?"var(--present)":p>=50?"var(--late)":"var(--absent)"}
+function ring(p,sz){sz=sz||64;var r=sz/2-6,c=2*Math.PI*r,m=sz/2;return '<span class="ring" style="width:'+sz+'px;height:'+sz+'px"><svg width="'+sz+'" height="'+sz+'" viewBox="0 0 '+sz+' '+sz+'"><circle cx="'+m+'" cy="'+m+'" r="'+r+'" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="'+m+'" cy="'+m+'" r="'+r+'" fill="none" stroke="'+pcol(p)+'" stroke-width="6" stroke-linecap="round" stroke-dasharray="'+(c*(p||0)/100)+' '+c+'" transform="rotate(-90 '+m+' '+m+')"/></svg><b'+(sz>80?' style="font-size:22px"':'')+'>'+(p===null||p===undefined?"–":p+"%")+'</b></span>'}
+function bar(p){return '<span class="bar"><i style="width:'+(p||0)+'%;background:'+pcol(p)+'"></i></span>'}
+function pTag(p){return p===null||p===undefined?'<span class="meta">No data</span>':'<span class="tag'+(p<75?' warn':'')+'">'+p+'%</span>'}
+function sTag(s){return s==="P"?'<span class="tag">Present</span>':s==="A"?'<span class="tag warn">Absent</span>':s==="L"?'<span class="tag late">Late</span>':'<span class="meta">Not marked</span>'}
+function tile(i,l,v,tone){return '<div class="tile '+(tone||"")+'"><div class="ti">'+ic(i,22)+'</div><div><b>'+v+'</b><span>'+l+'</span></div></div>'}
+function empty(i,t,s){return '<div class="empty">'+ic(i,34)+'<b>'+t+'</b>'+(s?'<span>'+s+'</span>':'')+'</div>'}
+function num(v){return Math.round(v*100)/100}
+function gkey(g){return String(g||"").toLowerCase()}
+function groupsOf(list){var m={},o=[];list.forEach(function(s){var k=gkey(s.group_name);if(!m[k]){m[k]={key:k,name:s.group_name,list:[]};o.push(m[k])}m[k].list.push(s)});return o.sort(function(a,b){return (a.key?0:1)-(b.key?0:1)||a.name.localeCompare(b.name)})}
+function subOpts(list,sel,all){return (all?'<option value="">All subjects</option>':'')+list.map(function(x){return '<option value="'+x.id+'"'+(String(x.id)===String(sel)?' selected':'')+'>'+esc(x.name)+'</option>'}).join("")}
+
+/* ---------- auth / maintenance ---------- */
+function authView(){
+  var su=mode==="signup";
+  return '<div class="auth"><div class="auth-art"><div class="brand"><span class="logo">'+ic("cap",22)+'</span>Class Portal</div>'+
+  '<div><h2>Every class, every group, one clear record.</h2><p>Sign in to see your attendance, assignments, timetable and marks.</p></div>'+
+  '<div class="pts"><div>'+ic("check",18)+'Attendance tracked subject by subject</div><div>'+ic("users",18)+'Groups made automatically from your group name</div><div>'+ic("chart",18)+'Reports you can download or print</div></div></div>'+
+  '<div class="auth-form"><div class="auth-box"><div class="brand mini-brand" style="color:var(--ink)"><span class="logo">'+ic("cap",22)+'</span>Class Portal</div>'+
+  '<h1>'+(su?"Create your account":"Welcome back")+'</h1><p class="meta">'+(su?"Use the class code from your CR. Students with the same group name are placed in one group.":"Log in as a student or as the CR.")+'</p>'+
+  '<div class="sw"><button class="'+(su?'':'on')+'" data-act="mode" data-m="login">Log in</button><button class="'+(su?'on':'')+'" data-act="mode" data-m="signup">Sign up</button></div><div class="card flat" style="padding:0;border:0;background:none;margin:0">'+
+  (su?'<label class="lbl" for="rn">Your name</label><input class="field" id="rn" placeholder="e.g. Ayesha Khan" autocomplete="name"><div class="grid2"><div><label class="lbl" for="rg">Group name</label><input class="field" id="rg" placeholder="e.g. Group A" maxlength="40"></div><div><label class="lbl" for="rr">Roll number</label><input class="field" id="rr" placeholder="Optional"></div></div><label class="lbl" for="rc">Class code</label><input class="field" id="rc" placeholder="From your CR">':'')+
+  '<label class="lbl" for="un">Username</label><input class="field" id="un" placeholder="Username" autocomplete="username" autocapitalize="none"><label class="lbl" for="pw">Password</label><input class="field" id="pw" type="password" placeholder="Password" autocomplete="'+(su?"new-password":"current-password")+'"><div class="err" id="aerr"></div>'+
+  '<button class="btn block" data-act="'+(su?"signup":"login")+'">'+(su?"Create account":"Log in")+'</button></div></div></div></div>';
+}
+function maintView(){return '<div class="maint"><div class="logo">'+ic("tool",30)+'</div><h2>Under maintenance</h2><div class="meta">'+esc(cfg.message)+'</div><button class="btn ghost" data-act="logout">Log out</button></div>'}
+
+/* ---------- home ---------- */
+function ttRow(x){return '<div class="card tt"><div class="tm">'+x.start+'<br>'+x.finish+'</div><div class="grow"><h3>'+esc(x.title)+'</h3><span class="meta">'+(x.room?'Room '+esc(x.room):'')+(x.room&&x.teacher?' · ':'')+esc(x.teacher||"")+(!x.room&&!x.teacher?'Class':'')+'</span></div>'+(me.role==="cr"?'<button class="btn ghost sm danger" data-act="deltt" data-id="'+x.id+'" aria-label="Delete class">'+ic("trash",16)+'</button>':'')+'</div>'}
+async function homeExtras(){
+  var F=cfg.features||{},h="";
+  if(F.timetable!==false){try{
+    var tt=await api("GET","/timetable"),dn=new Date().getDay()||7,td=tt.filter(function(x){return x.day===dn});
+    h+='<h2 class="h2">Today’s classes</h2>'+(td.length?td.map(ttRow).join(""):empty("cal","No classes today","Enjoy the free time."));
+  }catch(e){}}
+  if(F.exams!==false){try{
+    var ex=await api("GET","/exams"),t0=today(),up=ex.filter(function(x){return x.date>=t0}).reverse().slice(0,3);
+    if(up.length)h+='<h2 class="h2">Upcoming exams</h2>'+up.map(function(x){return '<div class="card row"><div><h3>'+esc(x.title)+'</h3><span class="meta">'+esc(x.subject||"General")+'</span></div><span class="tag brand">'+x.date+'</span></div>'}).join("");
+  }catch(e){}}
+  return h;
+}
+async function home(){
+  var s=await api("GET","/summary"),l=await api("GET","/announcements"),cr=me.role==="cr",g=null;
+  try{g=await api("GET","/groups")}catch(e){}
+  var hr=new Date().getHours(),hi=hr<12?"Good morning":hr<18?"Good afternoon":"Good evening",first=esc(me.name.split(" ")[0]);
+  var dt=new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
+  var h='<div class="hero"><div><h2>'+hi+', '+first+'</h2><p>'+dt+'</p>'+(cr?'':gchip(me.group_name))+'</div>'+
+    (cr?(s.pending_leaves?'<button class="btn" data-act="tab" data-t="Leave">'+s.pending_leaves+' leave request'+(s.pending_leaves>1?'s':'')+' waiting</button>':'')
+       :'<div style="display:flex;align-items:center;gap:14px"><div style="text-align:right"><b style="font-size:13px;opacity:.85;font-weight:600">My attendance</b></div>'+ring(s.pct,92)+'</div>')+'</div>';
+  h+='<div class="tiles">'+(cr?
+    tile("users","Students",s.students)+tile("cap","Groups",g?g.groups.filter(function(x){return x.name}).length:"–")+tile("tasks","Assignments",s.assignments)+tile("send","Pending leave",s.pending_leaves||0,s.pending_leaves?"warn":""):
+    tile("tasks","Pending assignments",s.pending,s.pending?"warn":"good")+tile("users","Group attendance",g&&g.groups[0]&&g.groups[0].pct!==null?g.groups[0].pct+"%":"–")+tile("cap","Classmates",s.students))+'</div>';
+  if(cr)h+='<div class="card"><h3 style="margin-bottom:8px">Post an announcement</h3><input class="field" id="at" placeholder="Title"><textarea class="field" id="ab" rows="2" placeholder="Message"></textarea><button class="btn" data-act="postann">'+ic("mega",18)+'Post</button></div>';
+  h+=await homeExtras();
+  h+='<h2 class="h2">Announcements</h2>';
+  if(!l.length)h+=empty("mega","No announcements yet","Updates from your CR will show up here.");
+  l.forEach(function(a){h+='<div class="card"><div class="row"><span class="tag brand">'+new Date(a.created_at).toLocaleDateString()+'</span>'+(cr?'<button class="btn ghost sm danger" data-act="delann" data-id="'+a.id+'" aria-label="Delete announcement">'+ic("trash",16)+'</button>':'')+'</div><h3 style="margin:10px 0 4px">'+esc(a.title)+'</h3><div class="meta" style="font-size:14px;white-space:pre-wrap">'+esc(a.body)+'</div></div>'});
+  return h;
+}
+
+/* ---------- assignments ---------- */
+async function assignments(){
+  var r=await api("GET","/assignments"),cr=me.role==="cr",h="";
+  if(cr)h+='<div class="card"><h3>New assignment</h3><div class="grid2"><div><input class="field" id="gt" placeholder="Title"></div><div><input class="field" id="gs" placeholder="Subject"></div></div><label class="lbl" for="gd">Due date</label><input class="field" id="gd" type="date"><button class="btn" data-act="postasg">'+ic("plus",18)+'Add assignment</button></div>';
+  if(!r.items.length)h+=empty("tasks","No assignments yet","Nothing due right now.");
+  r.items.forEach(function(a){
+    h+='<label class="card task'+(a.done&&!cr?' done':'')+'">'+(cr?'':'<input type="checkbox" data-act="tick" data-id="'+a.id+'"'+(a.done?' checked':'')+'>')+'<div class="grow"><h3>'+esc(a.title)+'</h3><div class="fl"><span class="tag brand">'+esc(a.subject||"General")+'</span><span class="meta">Due '+esc(a.due||"–")+(cr?' · '+a.done_count+'/'+r.total_students+' done':'')+'</span></div></div>'+(cr?'<button class="btn ghost sm danger" data-act="delasg" data-id="'+a.id+'" aria-label="Delete assignment">'+ic("trash",16)+'</button>':'')+'</label>';
+  });
+  return h;
+}
+
+/* ---------- attendance ---------- */
+function subjectsCard(list){
+  return '<div class="card"><h3>Subjects</h3><div class="fl" style="margin:10px 0 14px">'+(list.length?list.map(function(x){return '<span class="tag brand" style="padding:5px 6px 5px 12px">'+esc(x.name)+'<button class="btn ghost sm danger" style="padding:0 6px;border:0;background:none" data-act="delsub" data-id="'+x.id+'" data-n="'+esc(x.name)+'" title="Delete subject" aria-label="Delete '+esc(x.name)+'">'+ic("x",14)+'</button></span>'}).join(""):'<span class="meta">No subjects yet. Add the first one below.</span>')+'</div><div class="row nw"><input class="field" id="ns" placeholder="New subject (e.g. Mathematics)" style="margin:0"><button class="btn" data-act="addsub">'+ic("plus",18)+'Add</button></div></div>';
+}
+async function attStudent(){
+  var m=await api("GET","/attendance/me"),g=null,h="";
+  try{g=await api("GET","/groups")}catch(e){}
+  var mg=g&&g.groups[0];
+  h+='<div class="hero"><div><h2>Overall attendance</h2><p>Late counts as attended. Below 75% is flagged.</p>'+gchip(me.group_name)+'</div>'+ring(m.pct,104)+'</div>';
+  if(!m.records.length)return h+empty("check","No attendance recorded for you yet","Your CR will mark attendance after each class.");
+  h+='<h2 class="h2">By subject</h2>';
+  m.by_subject.forEach(function(x){
+    var gs=mg?mg.by_subject.filter(function(y){return y.subject_id===x.id})[0]:null;
+    h+='<div class="card"><div class="row"><div><h3>'+esc(x.name)+'</h3><span class="meta">Present '+x.present+' · Late '+x.late+' · Absent '+x.absent+'</span></div>'+pTag(x.pct)+'</div>'+
+    '<div class="mrow"><span class="nm">You</span>'+bar(x.pct)+'<span class="pc">'+(x.pct===null?"–":x.pct+"%")+'</span></div>'+
+    (gs?'<div class="mrow"><span class="nm">'+esc(mg.name)+'</span>'+bar(gs.pct)+'<span class="pc">'+(gs.pct===null?"–":gs.pct+"%")+'</span></div>':'')+'</div>';
+  });
+  h+='<h2 class="h2">Recent records</h2>';
+  m.records.slice(0,60).forEach(function(r){h+='<div class="card row" style="padding:12px 16px"><span><b>'+esc(r.subject)+'</b> <span class="meta">· '+r.date+'</span></span>'+sTag(r.status)+'</div>'});
+  return h;
+}
+function markBtns(s,cur){return '<div class="seg">'+["P","L","A"].map(function(v){var n={P:"Present",L:"Late",A:"Absent"}[v];return '<button data-act="mark" data-sid="'+s.id+'" data-v="'+v+'" class="'+(cur===v?'on-'+v:'')+'" aria-pressed="'+(cur===v)+'" title="'+n+'"><span class="l">'+n+'</span><span class="s">'+v+'</span></button>'}).join("")+'<button class="x" data-act="clr" data-sid="'+s.id+'" title="Clear this mark" aria-label="Clear mark">'+ic("x",14)+'</button></div>'}
+async function attendance(){
+  if(me.role!=="cr")return attStudent();
+  var d=await api("GET","/attendance?date="+adate+(asub?"&subject_id="+asub:""));
+  asub=d.subject_id;lastAtt=d;
+  var h='<div class="pills">'+d.subjects.map(function(s){return '<button class="pill'+(s.id===asub?' on':'')+'" data-act="pick" data-id="'+s.id+'">'+esc(s.name)+'</button>'}).join("")+'<button class="pill" data-act="manage">'+ic("plus",15)+'Subjects</button></div>';
+  if(manage||!d.subjects.length)h+=subjectsCard(d.subjects);
+  if(!d.subjects.length)return h+empty("book","Add your first subject","Attendance is taken subject by subject.");
+  var gm=groupsOf(d.students);
+  if(agrp&&!gm.some(function(g){return g.key===agrp}))agrp="";
+  var shown=gm.filter(function(g){return !agrp||g.key===agrp}),vis=[];shown.forEach(function(g){vis=vis.concat(g.list)});
+  var c={P:0,A:0,L:0,N:0};vis.forEach(function(s){var m=d.marks[s.id];if(m)c[m]++;else c.N++});
+  h+='<div class="card"><div class="inl"><div><label class="lbl" for="adate">Date</label><input type="date" id="adate" class="field" value="'+adate+'" max="'+today()+'"></div>'+
+     '<button class="btn ghost" data-act="allp">'+ic("check",18)+'Mark '+(agrp?'this group':'everyone')+' present</button></div>'+
+     (gm.length>1||(gm.length===1&&gm[0].key)?'<div class="meta" style="margin:16px 0 8px;font-weight:700">Groups for this subject</div><div class="pills" style="margin:0;padding-bottom:2px"><button class="pill'+(agrp?'':' on')+'" data-act="gfilter" data-g="">All groups<i>'+d.students.length+'</i></button>'+gm.map(function(g){return '<button class="pill g'+(agrp===g.key?' on':'')+'" style="--h:'+hue(g.name)+'" data-act="gfilter" data-g="'+esc(g.key)+'">'+esc(g.name||"No group")+'<i>'+g.list.length+'</i></button>'}).join("")+'</div>':'')+'</div>';
+  h+='<div class="tiles">'+tile("check","Present",c.P,"good")+tile("alert","Late",c.L,"warn")+tile("x","Absent",c.A,"bad")+tile("users","Not marked",c.N)+'</div>';
+  if(!d.students.length)return h+empty("users","No students yet","Students can sign up, or add them in the Students tab.");
+  shown.forEach(function(g){
+    var gp=0,gl=0,ga=0;g.list.forEach(function(s){var m=d.marks[s.id];if(m==="P")gp++;else if(m==="L")gl++;else if(m==="A")ga++});
+    h+='<section class="card gsec" style="--h:'+hue(g.name)+'"><header><div class="st">'+gchip(g.name)+'<span class="meta">'+g.list.length+' student'+(g.list.length>1?'s':'')+' · '+gp+' present · '+gl+' late · '+ga+' absent</span></div><div class="seg"><button data-act="gmark" data-g="'+esc(g.key)+'" data-v="P">All present</button><button data-act="gmark" data-g="'+esc(g.key)+'" data-v="A">All absent</button></div></header>'+
+    g.list.map(function(s){return '<div class="srow"><div class="who">'+avatar(s.name,s.group_name)+'<div style="min-width:0"><h3>'+esc(s.name)+'</h3><span class="meta">Roll '+esc(s.roll||"–")+'</span></div></div>'+markBtns(s,d.marks[s.id])+'</div>'}).join("")+'</section>';
+  });
+  var ss=await api("GET","/attendance/sessions");
+  h+='<h2 class="h2">Recent sessions</h2><div class="meta" style="margin:-6px 0 12px">Edit a past session to correct it, or delete it.</div>';
+  if(!ss.length)h+=empty("cal","No sessions marked yet");
+  ss.forEach(function(x){h+='<div class="card row"><div><h3>'+esc(x.subject)+'</h3><span class="meta">'+x.date+' · Present '+x.present+' · Late '+x.late+' · Absent '+x.absent+'</span></div><div class="seg"><button data-act="editsess" data-d="'+x.date+'" data-s="'+x.subject_id+'">Edit</button><button class="danger" data-act="delsess" data-d="'+x.date+'" data-s="'+x.subject_id+'" data-n="'+esc(x.subject)+'" aria-label="Delete session">'+ic("trash",16)+'</button></div></div>'});
+  return h;
+}
+
+/* ---------- groups ---------- */
+async function groups(){
+  var g=await api("GET","/groups"),cr=me.role==="cr",h="";
+  if(!cr&&!g.groups.length)return empty("users","You are not in a group yet","Add your group name in the Account tab and your group will appear here.");
+  if(!g.groups.length)return empty("users","No groups yet","Groups are created automatically from the group name each student enters.");
+  var named=g.groups.filter(function(x){return x.name}),loose=g.groups.filter(function(x){return !x.name})[0];
+  if(cr){
+    var total=g.groups.reduce(function(a,x){return a+x.size},0);
+    h+='<div class="tiles">'+tile("cap","Groups",named.length)+tile("users","Students",total)+(loose?tile("alert","Without a group",loose.size,"warn"):"")+'</div>';
+    if(loose)h+='<div class="banner">'+ic("alert",20)+loose.size+' student'+(loose.size>1?'s have':' has')+' no group yet. Set one in the Students tab.</div>';
+  }
+  h+='<div class="gg">'+g.groups.map(function(x){
+    return '<article class="card gcard" style="--h:'+hue(x.name)+'"><div class="row nw"><div class="grow"><h3 style="font-size:18px">'+esc(x.name||"No group")+'</h3><span class="meta">'+x.size+' member'+(x.size>1?'s':'')+' · overall attendance</span></div>'+ring(x.pct,64)+'</div>'+
+    '<div class="mem">'+x.members.map(function(m){return '<span>'+avatar(m.name,x.name,24)+esc(m.name)+'</span>'}).join("")+'</div>'+
+    '<div class="meta" style="font-weight:700;margin:12px 0 4px">Attendance by subject</div>'+
+    (x.by_subject.length?x.by_subject.map(function(b){return '<div class="mrow"><span class="nm" title="'+esc(b.subject)+'">'+esc(b.subject)+'</span>'+bar(b.pct)+'<span class="pc">'+(b.pct===null?"–":b.pct+"%")+'</span></div>'}).join(""):'<div class="meta">No subjects yet.</div>')+'</article>';
+  }).join("")+'</div>';
+  return h;
+}
+
+/* ---------- report ---------- */
+async function report(){
+  var subs=await api("GET","/subjects");
+  var r=await api("GET","/reports?from="+rfrom+"&to="+rto+(rsub?"&subject_id="+rsub:"")+(rgrp?"&group="+encodeURIComponent(rgrp):""));
+  lastRep=r;
+  var go='<option value="">All groups</option>'+r.groups.map(function(x){return '<option value="'+esc(x)+'"'+(x.toLowerCase()===rgrp.toLowerCase()?' selected':'')+'>'+esc(x)+'</option>'}).join("");
+  var h='<div class="card noprint"><div class="inl"><div><label class="lbl" for="rs">Subject</label><select id="rs" class="field">'+subOpts(subs,rsub,true)+'</select></div><div><label class="lbl" for="rg2">Group</label><select id="rg2" class="field">'+go+'</select></div><div><label class="lbl" for="rf">From</label><input type="date" id="rf" class="field" value="'+r.from+'" max="'+today()+'"></div><div><label class="lbl" for="rt">To</label><input type="date" id="rt" class="field" value="'+r.to+'" max="'+today()+'"></div><button class="btn" data-act="genrep">'+ic("chart",18)+'Generate</button></div></div>';
+  if(!subs.length)return h+empty("book","Add subjects first","Mark attendance in the Attendance tab, then come back here.");
+  var sn=r.subject_id?(r.subjects[0]?r.subjects[0].name:""):"All subjects";
+  h+='<div class="meta" style="margin:4px 2px 12px;font-weight:600">'+esc(sn)+' · '+(r.group?esc(r.group):'All groups')+' · '+r.from+' to '+r.to+'</div>';
+  h+='<div class="tiles">'+r.subjects.map(function(x){return '<div class="tile"><div class="ti">'+ring(x.avg_pct,44).replace('<b','<b style="font-size:11px"')+'</div><div><b style="font-size:15px">'+esc(x.name)+'</b><span>'+x.classes+(x.classes===1?' class':' classes')+' held</span></div></div>'}).join("")+'</div>';
+  if(!r.students.length)return h+empty("users","No students match","Try another group.");
+  var gs={};r.students.forEach(function(st){var k=st.group_name||"";var x=gs[k]=gs[k]||{n:k,p:0,l:0,a:0,c:0};x.p+=st.total.p;x.l+=st.total.l;x.a+=st.total.a;x.c++});
+  var gl=Object.keys(gs).map(function(k){return gs[k]});
+  if(gl.length>1||(gl.length===1&&gl[0].n)){
+    h+='<h2 class="h2">Group summary</h2><div class="tiles">'+gl.map(function(x){var t=x.p+x.l+x.a,p=t?Math.round((x.p+x.l)/t*100):null;return '<div class="tile" style="--h:'+hue(x.n)+'"><span class="av" style="--h:'+hue(x.n)+';--s:44px">'+esc((x.n||"?").charAt(0).toUpperCase())+'</span><div><b style="font-size:15px">'+esc(x.n||"No group")+'</b><span>'+x.c+' students · '+(p===null?"no data":p+"% attendance")+'</span></div></div>'}).join("")+'</div>';
+  }
+  var one=r.subjects.length===1;
+  h+='<div class="card scroll"><table><thead><tr><th>Group</th><th>Roll</th><th>Name</th>'+(one?'<th>Present</th><th>Late</th><th>Absent</th><th>Attendance</th>':r.subjects.map(function(x){return '<th>'+esc(x.name)+'</th>'}).join("")+'<th>Overall</th>')+'</tr></thead><tbody>';
+  r.students.forEach(function(st){
+    var row='<tr><td>'+gchip(st.group_name)+'</td><td>'+esc(st.roll||"–")+'</td><td><div class="tdn">'+avatar(st.name,st.group_name,30)+esc(st.name)+'</div></td>';
+    if(one){var t=st.total;row+='<td>'+t.p+'</td><td>'+t.l+'</td><td>'+t.a+'</td><td>'+pTag(t.pct)+'</td>'}
+    else{r.subjects.forEach(function(x){var y=st.by[x.id];row+='<td>'+(y?pTag(y.pct):'<span class="meta">–</span>')+'</td>'});row+='<td>'+pTag(st.total.pct)+'</td>'}
+    h+=row+'</tr>';
+  });
+  h+='</tbody></table></div><div class="fl noprint" style="margin-top:14px"><button class="btn ghost" data-act="csv">'+ic("down",18)+'Download CSV</button><button class="btn ghost" data-act="print">'+ic("print",18)+'Print / Save as PDF</button></div><p class="meta" style="margin-top:12px">Late counts as attended. Below 75% is highlighted.</p>';
+  return h;
+}
+function csvCell(v){v=String(v==null?"":v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function makeCsv(r){
+  var head=["Group","Roll","Name"];
+  r.subjects.forEach(function(x){head.push(x.name+" Present",x.name+" Late",x.name+" Absent",x.name+" %")});
+  head.push("Total Present","Total Late","Total Absent","Overall %");
+  var rows=[head].concat(r.students.map(function(st){
+    var row=[st.group_name,st.roll,st.name];
+    r.subjects.forEach(function(x){var y=st.by[x.id]||{p:0,l:0,a:0,pct:null};row.push(y.p,y.l,y.a,y.pct===null?"":y.pct)});
+    row.push(st.total.p,st.total.l,st.total.a,st.total.pct===null?"":st.total.pct);
+    return row;
+  }));
+  return rows.map(function(r){return r.map(csvCell).join(",")}).join("\r\n");
+}
+
+/* ---------- students ---------- */
+async function students(){
+  var r=await api("GET","/students");
+  var h='<div class="card"><h3 style="margin-bottom:8px">Add an account</h3><div class="grid2"><div><input class="field" id="sn" placeholder="Full name"></div><div><input class="field" id="sg" placeholder="Group name" maxlength="40"></div><div><input class="field" id="sr" placeholder="Roll number"></div><div><select class="field" id="sl"><option value="student">Student</option><option value="cr">CR / teacher</option></select></div><div><input class="field" id="su" placeholder="Username" autocapitalize="none"></div><div><input class="field" id="sp" type="password" placeholder="Password (6+ characters)" autocomplete="new-password"></div></div><button class="btn" data-act="addstu">'+ic("userplus",18)+'Add account</button></div>';
+  if(!r.items.length)return h+empty("users","No students yet","Students can sign up with the class code.");
+  h+='<div class="card scroll"><table><thead><tr><th>Student</th><th>Group</th><th>Roll</th><th>Attendance</th><th>Done</th><th></th></tr></thead><tbody>';
+  r.items.forEach(function(s){h+='<tr><td><div class="tdn">'+avatar(s.name,s.group_name,34)+'<div><div>'+esc(s.name)+'</div><span class="meta" style="font-weight:500">@'+esc(s.username)+'</span></div></div></td><td>'+gchip(s.group_name)+'</td><td>'+esc(s.roll||"–")+'</td><td>'+pTag(s.pct)+'</td><td>'+s.done+' / '+r.total_assignments+'</td><td><div class="fl" style="margin:0;flex-wrap:nowrap"><button class="btn ghost sm" data-act="setgrp" data-id="'+s.id+'" data-n="'+esc(s.name)+'" data-g="'+esc(s.group_name)+'">Group</button><button class="btn ghost sm" data-act="resetpw" data-id="'+s.id+'" data-n="'+esc(s.name)+'">Password</button><button class="btn ghost sm danger" data-act="delstu" data-id="'+s.id+'" data-n="'+esc(s.name)+'" aria-label="Remove student">'+ic("trash",16)+'</button></div></td></tr>'});
+  return h+'</tbody></table></div>';
+}
+
+/* ---------- account ---------- */
+async function account(){
+  var cr=me.role==="cr";
+  var h='<div class="card"><div class="row nw" style="justify-content:flex-start;gap:16px">'+avatar(me.name,me.group_name,56)+'<div><h3 style="font-size:18px">'+esc(me.name)+'</h3><span class="meta">@'+esc(me.username)+' · '+(cr?"CR / teacher":"Student")+'</span>'+(cr?'':'<div style="margin-top:6px">'+gchip(me.group_name)+'</div>')+'</div></div></div>';
+  h+='<div class="card"><h3 style="margin-bottom:8px">My details</h3><label class="lbl" for="pn">Name</label><input class="field" id="pn" value="'+esc(me.name)+'">'+(cr?'':'<div class="grid2"><div><label class="lbl" for="pg">Group name</label><input class="field" id="pg" value="'+esc(me.group_name)+'" maxlength="40" placeholder="e.g. Group A"></div><div><label class="lbl" for="pr">Roll number</label><input class="field" id="pr" value="'+esc(me.roll)+'"></div></div><div class="meta" style="margin:-4px 0 12px">Students who type the same group name are placed in the same group, for every subject.</div>')+'<button class="btn" data-act="saveprof">Save details</button></div>';
+  if(cr){
+    var s=await api("GET","/settings");cfg=s;
+    h+='<div class="card"><div class="row"><div><h3>Maintenance mode</h3><div class="meta">'+(s.maint?'On: students see a maintenance screen':'Off: portal is live')+'</div></div><button class="tog'+(s.maint?' on':'')+'" data-act="maint" role="switch" aria-checked="'+s.maint+'" aria-label="Maintenance mode"></button></div><label class="lbl" style="margin-top:14px" for="mm">Message shown to students</label><textarea class="field" id="mm" rows="3">'+esc(s.message)+'</textarea><button class="btn ghost" data-act="savemsg">Save message</button></div>';
+    h+='<div class="card"><h3>Student portal sections</h3><div class="meta" style="margin-bottom:6px">Turn sections on or off for students. CRs always see everything.</div>'+[["timetable","Timetable"],["resources","Resources"],["exams","Exams and marks"],["leaves","Leave requests"]].map(function(x){var on=(s.features||{})[x[0]]!==false;return '<div class="row" style="padding:9px 0;border-top:1px solid var(--line)"><span style="font-weight:600">'+x[1]+'</span><button class="tog'+(on?' on':'')+'" data-act="feat" data-f="'+x[0]+'" data-on="'+(on?1:0)+'" role="switch" aria-checked="'+on+'" aria-label="'+x[1]+'"></button></div>'}).join("")+'</div>';
+  }
+  h+='<div class="card"><h3 style="margin-bottom:8px">Change password</h3><input class="field" id="cp" type="password" placeholder="Current password" autocomplete="current-password"><input class="field" id="np" type="password" placeholder="New password (6+ characters)" autocomplete="new-password"><button class="btn ghost" data-act="chpw">Update password</button></div><button class="btn ghost danger" data-act="logout">'+ic("out",18)+'Log out</button>';
+  return h;
+}
+
+/* ---------- timetable / resources / exams / leave ---------- */
+var DAYS=["","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+async function timetable(){
+  var tt=await api("GET","/timetable"),cr=me.role==="cr",h="";
+  if(cr){
+    var subs=await api("GET","/subjects");
+    h+='<div class="card"><h3 style="margin-bottom:8px">Add a class</h3><label class="lbl" for="td">Day</label><select class="field" id="td">'+DAYS.slice(1).map(function(n,i){return '<option value="'+(i+1)+'">'+n+'</option>'}).join("")+'</select><div class="grid2"><div><label class="lbl" for="ts">Starts</label><input class="field" id="ts" type="time" value="08:00"></div><div><label class="lbl" for="te">Ends</label><input class="field" id="te" type="time" value="08:45"></div></div><select class="field" id="tsub"><option value="">Subject (or type a title below)</option>'+subOpts(subs,"")+'</select><input class="field" id="ttl" placeholder="Custom title (e.g. Break, Assembly)"><div class="grid2"><div><input class="field" id="trm" placeholder="Room (optional)"></div><div><input class="field" id="ttc" placeholder="Teacher (optional)"></div></div><button class="btn" data-act="addtt">'+ic("plus",18)+'Add to timetable</button></div>';
+  }
+  if(!tt.length)return h+empty("cal","No timetable yet","Classes will appear here once your CR adds them.");
+  var dn=new Date().getDay()||7;
+  for(var d=1;d<=7;d++){var rows=tt.filter(function(x){return x.day===d});if(!rows.length)continue;h+='<h2 class="h2">'+DAYS[d]+(d===dn?' <span class="tag brand">Today</span>':'')+'</h2>'+rows.map(ttRow).join("")}
+  return h;
+}
+async function resources(){
+  var rs=await api("GET","/resources"),cr=me.role==="cr",h="";
+  if(cr){var subs=await api("GET","/subjects");h+='<div class="card"><h3 style="margin-bottom:8px">Share a resource</h3><input class="field" id="rt1" placeholder="Title"><input class="field" id="ru" placeholder="Link (https://...)" autocapitalize="none"><select class="field" id="rsb"><option value="">Subject (optional)</option>'+subOpts(subs,"")+'</select><button class="btn" data-act="addres">'+ic("link",18)+'Share</button></div>'}
+  if(!rs.length)return h+empty("link","No resources shared yet","Notes, videos and PDFs from your CR will appear here.");
+  rs.forEach(function(x){h+='<div class="card row nw"><div class="av" style="--h:'+hue(x.subject||x.title)+';border-radius:14px">'+ic("link",18)+'</div><div class="grow"><h3><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" style="color:var(--ink);text-decoration:none">'+esc(x.title)+'</a></h3><div class="fl">'+(x.subject?'<span class="tag brand">'+esc(x.subject)+'</span>':'')+'<span class="meta">'+new Date(x.created_at).toLocaleDateString()+'</span></div></div>'+(cr?'<button class="btn ghost sm danger" data-act="delres" data-id="'+x.id+'" aria-label="Delete resource">'+ic("trash",16)+'</button>':'<a class="btn ghost sm" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Open</a>')+'</div>'});
+  return h;
+}
+async function marksEditor(){
+  var r=await api("GET","/exams/"+mexam+"/marks");
+  var h='<div class="row" style="margin-bottom:14px"><div><h2 style="font-size:20px;font-weight:800">'+esc(r.exam.title)+'</h2><span class="meta">'+esc(r.exam.subject||"General")+' · '+r.exam.date+' · out of '+num(r.exam.max_marks)+'</span></div><button class="btn ghost" data-act="backexam">Back</button></div>';
+  if(!r.students.length)return h+empty("users","No students yet");
+  r.students.forEach(function(s){h+='<div class="card row" style="padding:12px 16px"><div class="who" style="display:flex;align-items:center;gap:12px">'+avatar(s.name)+'<div><h3>'+esc(s.name)+'</h3><span class="meta">Roll '+esc(s.roll||"–")+'</span></div></div><input class="field sc" type="number" min="0" max="'+r.exam.max_marks+'" step="any" data-uid="'+s.id+'" value="'+(s.score===null?"":s.score)+'" placeholder="Marks" style="width:110px;margin:0"></div>'});
+  return h+'<button class="btn" data-act="savemarks">Save marks</button><p class="meta" style="margin-top:10px">Leave a box empty for no marks. Students see their own marks.</p>';
+}
+async function exams(){
+  var cr=me.role==="cr";
+  if(cr&&mexam)return marksEditor();
+  var ex=await api("GET","/exams"),h="";
+  if(cr){var subs=await api("GET","/subjects");h+='<div class="card"><h3 style="margin-bottom:8px">New exam / test</h3><input class="field" id="et" placeholder="Title (e.g. Mid-term)"><select class="field" id="esb"><option value="">Subject (optional)</option>'+subOpts(subs,"")+'</select><div class="grid2"><div><label class="lbl" for="ed">Date</label><input class="field" id="ed" type="date" value="'+today()+'"></div><div><label class="lbl" for="em">Total marks</label><input class="field" id="em" type="number" min="1" value="100"></div></div><button class="btn" data-act="addexam">'+ic("plus",18)+'Add exam</button></div>'}
+  else{
+    var g=ex.filter(function(x){return x.score!==null});
+    if(g.length){var avg=Math.round(g.reduce(function(a,x){return a+x.score/x.max_marks*100},0)/g.length);h+='<div class="tiles">'+tile("award","Average score",avg+"%","good")+tile("check","Exams graded",g.length)+'</div>'}
+  }
+  if(!ex.length)return h+empty("award","No exams yet","Scheduled tests and your marks will show here.");
+  ex.forEach(function(x){
+    var right;
+    if(cr)right='<div class="seg"><button data-act="marks" data-id="'+x.id+'">Enter marks</button><button class="danger" data-act="delexam" data-id="'+x.id+'" data-n="'+esc(x.title)+'" aria-label="Delete exam">'+ic("trash",16)+'</button></div>';
+    else if(x.score===null)right='<span class="meta">Not graded yet</span>';
+    else{var pc=Math.round(x.score/x.max_marks*100);right='<span class="tag'+(pc<40?' warn':'')+'">'+num(x.score)+' / '+num(x.max_marks)+' · '+pc+'%</span>'}
+    h+='<div class="card row"><div><h3>'+esc(x.title)+'</h3><span class="meta">'+esc(x.subject||"General")+' · '+x.date+(cr?' · graded '+x.graded+(x.avg!==null?' · avg '+num(x.avg):''):'')+'</span></div>'+right+'</div>';
+  });
+  return h;
+}
+function lvTag(st){return st==="approved"?'<span class="tag">Approved</span>':st==="rejected"?'<span class="tag warn">Rejected</span>':'<span class="tag late">Pending</span>'}
+async function leave(){
+  var ls=await api("GET","/leaves"),cr=me.role==="cr",h="";
+  if(!cr)h+='<div class="card"><h3 style="margin-bottom:8px">Request leave</h3><div class="grid2"><div><label class="lbl" for="lf">From</label><input class="field" id="lf" type="date" value="'+today()+'"></div><div><label class="lbl" for="lt">To</label><input class="field" id="lt" type="date" value="'+today()+'"></div></div><textarea class="field" id="lr" rows="2" placeholder="Reason"></textarea><button class="btn" data-act="reqleave">'+ic("send",18)+'Send request</button></div>';
+  if(!ls.length)return h+empty("send",cr?"No leave requests":"You have not requested any leave");
+  ls.forEach(function(x){
+    var btns=cr?'<button data-act="lvok" data-id="'+x.id+'">Approve</button><button class="danger" data-act="lvno" data-id="'+x.id+'">Reject</button><button data-act="lvdel" data-id="'+x.id+'" aria-label="Delete request">'+ic("trash",16)+'</button>':(x.status==="pending"?'<button class="danger" data-act="lvdel" data-id="'+x.id+'">Cancel request</button>':'');
+    h+='<div class="card"><div class="row"><div><h3>'+(cr?esc(x.name)+(x.roll?' · Roll '+esc(x.roll):''):x.from_date+' to '+x.to_date)+'</h3><span class="meta">'+(cr?x.from_date+' to '+x.to_date+' · ':'')+esc(x.reason)+'</span></div>'+lvTag(x.status)+'</div>'+(x.note?'<div class="meta" style="margin-top:8px">CR note: '+esc(x.note)+'</div>':'')+(btns?'<div class="seg" style="margin-top:12px">'+btns+'</div>':'')+'</div>';
+  });
+  return h;
+}
+
+/* ---------- shell ---------- */
+var VIEWS={Home:home,Assignments:assignments,Attendance:attendance,Groups:groups,Timetable:timetable,Resources:resources,Exams:exams,Leave:leave,Report:report,Students:students,Account:account};
+var META={Home:["Home","Your class at a glance",'home'],Assignments:["Assignments","Track what is due",'tasks'],Attendance:["Attendance","Mark and review attendance subject by subject",'check'],Groups:["Groups","Created automatically from each student’s group name",'cap'],Timetable:["Timetable","Your weekly schedule",'cal'],Resources:["Resources","Notes, videos and links",'link'],Exams:["Exams and marks","Tests and results",'award'],Leave:["Leave","Requests and approvals",'send'],Report:["Reports","Attendance by subject and group",'chart'],Students:["Students","Accounts, groups and passwords",'userplus'],Account:["Account","Your details and settings",'user']};
+function tabsFor(){
+  var F=cfg.features||{},cr=me.role==="cr",FT={Timetable:"timetable",Resources:"resources",Exams:"exams",Leave:"leaves"},t=["Home","Attendance","Groups"];
+  if(cr)t.push("Report");
+  t.push("Assignments");
+  ["Timetable","Resources","Exams","Leave"].forEach(function(x){if(F[FT[x]]!==false||cr)t.push(x)});
+  if(cr)t.push("Students");
+  t.push("Account");
+  return {list:t,FT:FT,F:F};
+}
+async function render(){
+  var my=++seq,v=$("view"),sh=$("shell");
+  if(!me){sh.className="shell guest";$("side").innerHTML=$("top").innerHTML=$("dock").innerHTML=$("sheet").innerHTML="";v.innerHTML=authView();return}
+  if(me.role!=="cr"){try{cfg=await api("GET","/settings")}catch(e){}if(my!==seq)return}
+  if(me.role!=="cr"&&cfg.maint){sh.className="shell guest";$("side").innerHTML=$("top").innerHTML=$("dock").innerHTML="";v.innerHTML=maintView();return}
+  sh.className="shell";
+  var T=tabsFor(),isCR=me.role==="cr";
+  if(T.list.indexOf(tab)<0)tab="Home";
+  var label=function(t){return META[t][0]+(isCR&&T.FT[t]&&T.F[T.FT[t]]===false?" (off)":"")};
+  $("side").innerHTML='<div class="brand"><span class="logo">'+ic("cap",22)+'</span>Class Portal</div><nav class="navs" aria-label="Main">'+T.list.map(function(t){return '<button class="navb" data-act="tab" data-t="'+t+'"'+(t===tab?' aria-current="page"':'')+'>'+ic(META[t][2],20)+label(t)+'</button>'}).join("")+'</nav>'+
+    '<div class="me">'+avatar(me.name,me.group_name,38)+'<div style="min-width:0"><b>'+esc(me.name)+'</b><span class="sub">'+(isCR?"CR / teacher":esc(me.group_name||"Student"))+'</span></div><button class="out" data-act="logout" title="Log out" aria-label="Log out">'+ic("out",18)+'</button></div>';
+  $("top").innerHTML='<div class="brand"><span class="logo">'+ic("cap",20)+'</span>Class Portal</div>'+avatar(me.name,me.group_name,36);
+  var main=T.list.slice(0,4),more=T.list.slice(4),onMore=more.indexOf(tab)>=0;
+  $("dock").innerHTML=main.map(function(t){return '<button data-act="tab" data-t="'+t+'"'+(t===tab?' aria-current="page"':'')+'>'+ic(META[t][2],22)+META[t][0].split(" ")[0]+'</button>'}).join("")+'<button data-act="opensheet"'+(onMore?' aria-current="page"':'')+'>'+ic("more",22)+'More</button>';
+  $("sheet").className="sheet"+(sheetOpen?" open":"");
+  $("sheet").innerHTML='<div class="panel" data-stop="1"><div class="grab"></div><div class="grid">'+more.map(function(t){return '<button data-act="tab" data-t="'+t+'"'+(t===tab?' aria-current="page"':'')+'>'+ic(META[t][2],24)+META[t][0].split(" ")[0]+'</button>'}).join("")+'<button data-act="logout">'+ic("out",24)+'Log out</button></div></div>';
+  try{
+    var h=await VIEWS[tab]();if(my!==seq)return;
+    var head=(tab==="Home"||(tab==="Exams"&&mexam))?'':'<div class="ph"><h1>'+META[tab][0]+'</h1><p>'+(tab==="Groups"&&!isCR?"Your group and how it is doing in each subject":tab==="Attendance"&&!isCR?"Your attendance in every subject":META[tab][1])+'</p></div>';
+    v.innerHTML=(cfg.maint?'<div class="banner">'+ic("tool",20)+'Maintenance mode is on. Students currently see the maintenance screen.</div>':'')+head+h;
+  }catch(e){if(my===seq)fail(e)}
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;
+  if(b.dataset.act==="closesheet"&&e.target.closest("[data-stop]")&&e.target.closest("[data-act]")===b)return;
+  var a=b.dataset.act,id=b.dataset.id;
+  act(async function(){
+    if(a==="tab"){tab=b.dataset.t;mexam=null;sheetOpen=false;window.scrollTo(0,0);return render()}
+    if(a==="opensheet"){sheetOpen=true;$("sheet").className="sheet open";return}
+    if(a==="closesheet"){sheetOpen=false;$("sheet").className="sheet";return}
+    if(a==="mode"){mode=b.dataset.m;return render()}
+    if(a==="login"||a==="signup"){
+      $("aerr").textContent="";
+      try{
+        var r=a==="login"?await api("POST","/login",{username:val("un"),password:$("pw").value}):await api("POST","/register",{name:val("rn"),group_name:val("rg"),roll:val("rr"),code:val("rc"),username:val("un"),password:$("pw").value});
+        me=r.user;cfg=r.settings;tab="Home";return render();
+      }catch(er){
+        if(er.status===503&&er.data&&er.data.error==="maintenance"){cfg.maint=true;cfg.message=er.data.message}
+        $("aerr").textContent=er.status===503?"The portal is under maintenance. "+(cfg.message||""):er.message;return;
+      }
+    }
+    if(a==="logout"){await api("POST","/logout",{});me=null;mode="login";sheetOpen=false;return render()}
+    if(a==="tick"){await api("POST","/assignments/"+id+"/done",{done:b.checked});return render()}
+    if(a==="postann"){if(!val("at"))return toast("Add a title");await api("POST","/announcements",{title:val("at"),body:val("ab")});return render()}
+    if(a==="delann"){await api("DELETE","/announcements/"+id);return render()}
+    if(a==="postasg"){if(!val("gt"))return toast("Add a title");await api("POST","/assignments",{title:val("gt"),subject:val("gs"),due:val("gd")});return render()}
+    if(a==="delasg"){if(!confirm("Delete this assignment?"))return;await api("DELETE","/assignments/"+id);return render()}
+    if(a==="pick"){asub=id;return render()}
+    if(a==="manage"){manage=!manage;return render()}
+    if(a==="gfilter"){agrp=b.dataset.g;return render()}
+    if(a==="mark"){var o0={};o0[b.dataset.sid]=b.dataset.v;await api("PUT","/attendance",{date:adate,subject_id:asub,marks:o0});return render()}
+    if(a==="gmark"){var o2={};(lastAtt?lastAtt.students:[]).forEach(function(s){if(gkey(s.group_name)===b.dataset.g)o2[s.id]=b.dataset.v});await api("PUT","/attendance",{date:adate,subject_id:asub,marks:o2});return render()}
+    if(a==="allp"){var o={};(lastAtt?lastAtt.students:[]).forEach(function(s){if(!agrp||gkey(s.group_name)===agrp)o[s.id]="P"});await api("PUT","/attendance",{date:adate,subject_id:asub,marks:o});return render()}
+    if(a==="addsub"){var n=val("ns");if(!n)return toast("Enter a subject name");var rs=await api("POST","/subjects",{name:n});asub=rs.id;return render()}
+    if(a==="delsub"){if(!confirm("Delete "+b.dataset.n+" and all its attendance records?"))return;await api("DELETE","/subjects/"+id);if(String(asub)===String(id))asub=null;if(String(rsub)===String(id))rsub="";return render()}
+    if(a==="genrep"){var f=val("rf"),t=val("rt");if(f&&t&&f>t)return toast("Start date must be before end date");rfrom=f||rfrom;rto=t||rto;rsub=val("rs");rgrp=val("rg2");return render()}
+    if(a==="csv"){if(!lastRep)return;var u=URL.createObjectURL(new Blob(["\ufeff"+makeCsv(lastRep)],{type:"text/csv;charset=utf-8"})),l=document.createElement("a");l.href=u;l.download="attendance-"+lastRep.from+"-to-"+lastRep.to+".csv";document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u)},2000);return}
+    if(a==="print"){window.print();return}
+    if(a==="clr"){var o1={};o1[b.dataset.sid]="";await api("PUT","/attendance",{date:adate,subject_id:asub,marks:o1});return render()}
+    if(a==="editsess"){adate=b.dataset.d;asub=b.dataset.s;window.scrollTo(0,0);return render()}
+    if(a==="delsess"){if(!confirm("Delete all "+b.dataset.n+" attendance for "+b.dataset.d+"?"))return;await api("DELETE","/attendance?date="+b.dataset.d+"&subject_id="+b.dataset.s);return render()}
+    if(a==="addtt"){await api("POST","/timetable",{day:val("td"),start:val("ts"),finish:val("te"),subject_id:val("tsub"),title:val("ttl"),room:val("trm"),teacher:val("ttc")});return render()}
+    if(a==="deltt"){await api("DELETE","/timetable/"+id);return render()}
+    if(a==="addres"){await api("POST","/resources",{title:val("rt1"),url:val("ru"),subject_id:val("rsb")});return render()}
+    if(a==="delres"){if(!confirm("Delete this resource?"))return;await api("DELETE","/resources/"+id);return render()}
+    if(a==="addexam"){await api("POST","/exams",{title:val("et"),subject_id:val("esb"),date:val("ed"),max_marks:val("em")});return render()}
+    if(a==="delexam"){if(!confirm("Delete "+b.dataset.n+" and all its marks?"))return;await api("DELETE","/exams/"+id);return render()}
+    if(a==="marks"){mexam=id;return render()}
+    if(a==="backexam"){mexam=null;return render()}
+    if(a==="savemarks"){var sc={};document.querySelectorAll(".sc").forEach(function(i){sc[i.dataset.uid]=i.value.trim()});await api("PUT","/exams/"+mexam+"/marks",{scores:sc});return toast("Marks saved")}
+    if(a==="reqleave"){await api("POST","/leaves",{from_date:val("lf"),to_date:val("lt"),reason:val("lr")});toast("Request sent");return render()}
+    if(a==="lvok"||a==="lvno"){var nt=prompt("Note for the student (optional):","");if(nt===null)return;await api("PUT","/leaves/"+id,{status:a==="lvok"?"approved":"rejected",note:nt});return render()}
+    if(a==="lvdel"){if(!confirm("Delete this request?"))return;await api("DELETE","/leaves/"+id);return render()}
+    if(a==="feat"){var fo={};fo[b.dataset.f]=b.dataset.on!=="1";cfg=await api("PUT","/settings",{features:fo});return render()}
+    if(a==="addstu"){await api("POST","/students",{name:val("sn"),group_name:val("sg"),roll:val("sr"),username:val("su"),password:$("sp").value,role:val("sl")});toast("Account added");return render()}
+    if(a==="setgrp"){var gn=prompt("Group name for "+b.dataset.n+" (leave empty for no group):",b.dataset.g||"");if(gn===null)return;await api("PUT","/students/"+id+"/group",{group_name:gn});toast("Group updated");return render()}
+    if(a==="resetpw"){var pw=prompt("New password for "+b.dataset.n+" (6+ characters):");if(!pw)return;await api("POST","/students/"+id+"/password",{password:pw});return toast("Password updated")}
+    if(a==="delstu"){if(!confirm("Remove "+b.dataset.n+" and all their records?"))return;await api("DELETE","/students/"+id);return render()}
+    if(a==="saveprof"){var rp=await api("PUT","/me",{name:val("pn"),group_name:val("pg"),roll:val("pr")});me=rp.user;toast("Details saved");return render()}
+    if(a==="maint"){await api("PUT","/settings",{maint:!cfg.maint});return render()}
+    if(a==="savemsg"){await api("PUT","/settings",{message:val("mm")});return toast("Message saved")}
+    if(a==="chpw"){await api("POST","/me/password",{current:$("cp").value,password:$("np").value});$("cp").value="";$("np").value="";return toast("Password updated")}
+  });
+});
+document.addEventListener("change",function(e){
+  if(e.target.id==="adate"&&e.target.value){adate=e.target.value;render()}
+});
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"||e.target.tagName!=="INPUT")return;
+  var c=e.target.closest(".card,.auth-box"),b=c&&c.querySelector('.btn:not(.ghost):not(.sm)[data-act]:not([data-act="mode"])');
+  if(b)b.click();
+});
+(async function(){try{var r=await api("GET","/me");me=r.user;cfg=r.settings}catch(e){}render()})();
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+# Class Portal (Vercel + Neon Postgres)
+
+CR/teacher login, student login, **subject-wise attendance with reports (CSV / print to PDF)**, assignments,
+announcements and maintenance mode.
+Backend: Express as a Vercel serverless function (`api/index.js`). Database: Neon Postgres.
+Frontend: `public/index.html` (no build step).
+
+## Deploy on Vercel (same project / same link)
+1. Neon: create a project at neon.tech, copy the **pooled** connection string.
+2. Vercel -> your project -> Settings -> Environment Variables, add (Production, Preview, Development):
+   - `DATABASE_URL`  (Neon string)
+   - `ADMIN_USERNAME`, `ADMIN_PASSWORD`  (your CR login)
+   - `CLASS_CODE`  (code students need to sign up)
+3. Push this repo to GitHub. Vercel redeploys automatically.
+4. Open the site and log in with ADMIN_USERNAME / ADMIN_PASSWORD. Tables are created on first request.
+
+`vercel.json` already sets Framework = Other, no build command, output folder `public`.
+If a deploy fails, check Settings -> General: remove any old Build Command / Output Directory overrides.
+
+## Run locally
+```
+npm install
+# set DATABASE_URL, ADMIN_PASSWORD, CLASS_CODE in your shell, then:
+node server.js
+```
+
+## Notes
+- Change the CR password after first login (Account tab). Changing ADMIN_PASSWORD later does not
+  change an existing account; it is only used when no CR exists.
+- The CR can add more CR accounts in the Students tab.
+- Database data lives in Neon, so redeploys never erase it.
+
+## Subjects and reports
+- CR: Attendance tab -> add subjects (Mathematics, Physics...), pick subject + date, mark Present/Absent/Late.
+- CR: Report tab -> choose subject (or all), date range, Generate. Download CSV (opens in Excel) or
+  Print / Save as PDF. Below 75% is highlighted.
+- Students see their attendance per subject and overall.
+- Upgrading an older install: existing attendance is moved automatically into a subject called "General".
+
+## More sections (all controlled by the CR, shown to students)
+- **Attendance edit:** change or clear any mark, reopen a past session with Edit, or delete a session.
+- **Timetable:** CR builds the weekly timetable; students see it, plus "Today's classes" on Home.
+- **Resources:** CR shares links (notes, videos, PDFs); students open them.
+- **Exams and marks:** CR creates exams and enters marks; each student sees only their own marks and average.
+- **Leave requests:** students request leave; CR approves or rejects with a note; students see the status.
+- **On/off switches:** Account tab (CR) -> "Student portal sections". Turned-off sections disappear for students.
+- New tables are created automatically on the first request after deploy; existing data is kept.
+
+## Groups (new)
+- **Students enter a group name when they sign up** (and can change it any time in Account -> My details).
+  Names are matched case-insensitively and extra spaces are ignored, so "alpha  team" and "Alpha Team" become one group.
+- **Attendance groups are generated automatically for every subject.** In the CR's Attendance tab, the sheet for the chosen
+  subject is split into one section per group, with filter chips, "All present / All absent" per group, and live counts.
+- **Groups tab:** CR sees every group with members and attendance per subject; a student sees only their own group.
+- **Reports:** filter by group, group summary cards, and a Group column in the table and CSV.
+- **Students tab (CR):** set or change any student's group, and set a group when adding an account.
+- Upgrading: the `group_name` column is added automatically on the first request. Existing students show as "No group"
+  until they (or the CR) set one.
+- The page now loads the Plus Jakarta Sans font from Google Fonts (allowed in the CSP in `app.js`); it falls back to system fonts if blocked.
